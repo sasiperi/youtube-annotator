@@ -1,0 +1,11 @@
+{
+	"id": "youtube-annotator-custom-view",
+	"name": "youtube-annotator-custom-view",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Where annotation meets youtube in Obsidian",
+	"author": "Anant Upadhyayula",
+	"authorUrl": "https://fourthquest.com/",
+	"fundingUrl": "https://github.com/sponsors/sasiperi?frequency=one-time",
+	"isDesktopOnly": false
+}
