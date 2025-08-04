@@ -18,9 +18,23 @@ import { YouTubePlayerModal } from "./modal/YouTubePlayerModal";
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
 
+  public async activateView(videoId?: string) {
+    const leaf = this.app.workspace.getRightLeaf(false);
+    if (leaf) {
+      await leaf.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: videoId ? { videoId } : {},
+        active: true,
+      });
+      this.app.workspace.revealLeaf(leaf);
+    }
+  }
   
   async onload() {
-    //console.log(`[${PLUGIN_ID}] loading plugin...`);
+    // this logic is to add icon to ribbon
+      this.addRibbonIcon("play-circle", "Open YouTube Annotator", () => {
+      this.openModal();
+    });
 
     // Load settings
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -50,23 +64,43 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     console.log(`[${PLUGIN_ID}] initialized`);
   }
 
-  async activateView() {
-    const leaf = this.app.workspace.getRightLeaf(false);
-    await leaf?.setViewState({
-      type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-      active: true,
-    });
-    if (leaf) this.app.workspace.revealLeaf(leaf);
+  // async activateView() {
+  //   const newLeaf = this.app.workspace.getRightLeaf(false);
+  //   await leaf?.setViewState({
+  //     type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+  //     active: true,
+  //   });
+  //   if (leaf) this.app.workspace.revealLeaf(leaf);
 
-  }
+  // }
 
-  async openModal() {
-    const modal = new YoutubePromptModal(this.app, (url: string) => {
-      console.log("URL received:", url);
-      // Hook logic: store URL, open view, etc.
+async openModal() {
+  const modal = new YoutubePromptModal(this.app, async (videoId: string, originalUrl: string) => {
+    console.log("✅ Video ID from modal:", videoId);
+
+    // Detach any existing YouTube annotator views
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
+    for (const leaf of leaves) {
+      await leaf.detach();
+    }
+
+    // ✅ Always use the RIGHT view pane (not center)
+    const newLeaf = this.app.workspace.getRightLeaf(false);
+if (newLeaf) {
+  await newLeaf.setViewState({
+    type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+    state: { videoId },
+    active: true,
     });
-    modal.open();
-  }
+    this.app.workspace.revealLeaf(newLeaf); // ✅ now safe
+    }
+
+  });
+
+  modal.open();
+}
+
+
 
   async saveSettings() {
     await this.saveData(this.settings);

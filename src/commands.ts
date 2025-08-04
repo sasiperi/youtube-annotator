@@ -10,6 +10,9 @@ import {
 //import { YoutubeUrlModal } from "./modal/YouTubePlayerModal"
 
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
+
+
+  
   plugin.addCommand({
     id: CMD_OPEN_ANNOTATOR,
     name: "Open YouTube Annotator",
