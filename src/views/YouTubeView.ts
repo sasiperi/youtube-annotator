@@ -81,35 +81,7 @@ export class YouTubeView extends ItemView {
     new Notice("📸 Screenshot logic not implemented yet");
   };
 
-  // 3. Play/Pause button
-  const playPauseBtn = tools.createEl("button", { text: "⏯️", attr: { title: "Play/Pause" } });
-  playPauseBtn.onclick = () => {
-    if (!this.playerWrapper?.isPlayerReady()) {
-      new Notice("⏳ Player not ready");
-      return;
-    }
-    const result = this.playerWrapper.togglePlayPause();
-    new Notice(result === "paused" ? "⏸️ Paused" : "▶️ Playing");
-  };
-
-  // 4. Mute/Unmute
-  const muteBtn = tools.createEl("button", { text: "🔇", attr: { title: "Mute/Unmute" } });
-  muteBtn.onclick = () => {
-    if (!this.playerWrapper?.isPlayerReady()) {
-      new Notice("⏳ Player not ready");
-      return;
-    }
-    const player = (this.playerWrapper as any)["player"];
-    if (player.isMuted()) {
-      player.unMute();
-      new Notice("🔊 Unmuted");
-    } else {
-      player.mute();
-      new Notice("🔇 Muted");
-    }
-  };
-
-  // 5. Close player
+  // 3. Close player
   const closeBtn = tools.createEl("button", { text: "❌", attr: { title: "Close player" } });
   closeBtn.onclick = () => this.leaf.detach();
 }
