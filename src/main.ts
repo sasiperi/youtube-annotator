@@ -10,7 +10,7 @@ import {
   PLUGIN_ID,
 } from "./constants";
 import { YoutubeAnnotatorSettingTab, DEFAULT_SETTINGS, YoutubeAnnotatorSettings, } from "./settings";
-import { YOUTUBE_VIEW_TYPE, YouTubeView } from "./views/YouTubeView";
+import {YouTubeView } from "./views/YouTubeView";
 import { registerCommands } from "./commands";
 import { YoutubePromptModal } from "./modal/YoutubePromptModal";
 import { YouTubePlayerModal } from "./modal/YouTubePlayerModal";
@@ -32,7 +32,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   
   async onload() {
     // this logic is to add icon to ribbon
-      this.addRibbonIcon("play-circle", "Open YouTube Annotator", () => {
+      this.addRibbonIcon("play-square", "Open YouTube Annotator", () => {
       this.openModal();
     });
 
@@ -41,13 +41,13 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
 
     // Register views
     this.registerView(
-      YOUTUBE_VIEW_TYPE,
-      (leaf) => new YouTubeView(leaf)
+      VIEW_TYPE_YOUTUBE_ANNOTATOR,
+      (leaf) => new YouTubeView(leaf,this)
     );
 
     this.registerView(
       VIEW_TYPE_YOUTUBE_ANNOTATOR,
-      (leaf) => new YouTubeView(leaf)
+      (leaf) => new YouTubeView(leaf,this)
     );
 
     // Add setting tab
@@ -64,15 +64,6 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     console.log(`[${PLUGIN_ID}] initialized`);
   }
 
-  // async activateView() {
-  //   const newLeaf = this.app.workspace.getRightLeaf(false);
-  //   await leaf?.setViewState({
-  //     type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-  //     active: true,
-  //   });
-  //   if (leaf) this.app.workspace.revealLeaf(leaf);
-
-  // }
 
 async openModal() {
   const modal = new YoutubePromptModal(this.app, async (videoId: string, originalUrl: string) => {
@@ -86,20 +77,18 @@ async openModal() {
 
     // ✅ Always use the RIGHT view pane (not center)
     const newLeaf = this.app.workspace.getRightLeaf(false);
-if (newLeaf) {
-  await newLeaf.setViewState({
-    type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-    state: { videoId },
-    active: true,
-    });
-    this.app.workspace.revealLeaf(newLeaf); // ✅ now safe
-    }
+    if (newLeaf) {
+      await newLeaf.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: { videoId },
+        active: true,
+        });
+        this.app.workspace.revealLeaf(newLeaf); // ✅ now safe
+        }
 
   });
-
-  modal.open();
+    modal.open();
 }
-
 
 
   async saveSettings() {

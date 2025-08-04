@@ -1,3 +1,4 @@
+// src/youtube/playerWrapper.ts starats here
 export class PlayerWrapper {
   private player: YT.Player;
   private isReady: boolean = false;
@@ -41,6 +42,17 @@ export class PlayerWrapper {
   pause() {
     this.player.pauseVideo();
   }
+  
+  togglePlayPause(): string {
+  const state = this.player.getPlayerState();
+  if (state === YT.PlayerState.PLAYING) {
+    this.pause();
+    return "paused";
+  } else {
+    this.play();
+    return "playing";
+  }
+}
 
   stop() {
     this.player.stopVideo();
@@ -64,3 +76,4 @@ export class PlayerWrapper {
     }
   }
 }
+// src/youtube/playerWrapper.ts ends here

@@ -1,81 +1,118 @@
-import { log } from "console";
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
-import { PlayerWrapper } from "youtube/playerWrapper";
+// src/views/YouTubeView.ts starts here
 
-export const YOUTUBE_VIEW_TYPE = "youtube-annotator-view";
+import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import { PlayerWrapper } from "../youtube/playerWrapper";
+import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
+import type YoutubeAnnotatorPlugin from "../main";
+import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
+import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
+
 
 export class YouTubeView extends ItemView {
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
+  playerWrapper: PlayerWrapper | null = null;
+  currentSpeedIndex = 0;
+  speeds = [1, 1.5, 2];
+  videoId: string | null = null;
 
-	getViewType(): string {
-		return YOUTUBE_VIEW_TYPE;
-	}
+  constructor(
+    leaf: WorkspaceLeaf,
+    private plugin: YoutubeAnnotatorPlugin
+  ) {
+    super(leaf);
+  }
 
-	getDisplayText(): string {
-		return "YouTube Annotator";
-	}
+  getViewType(): string {
+    return VIEW_TYPE_YOUTUBE_ANNOTATOR;
+  }
 
-	async onOpen() {
-		const container = this.containerEl.children[1];
-		container.empty();
+  getDisplayText(): string {
+    return "YouTube Annotator";
+  }
 
-		// Create a YouTube player container
-		const videoContainer = container.createDiv({ cls: "youtube-video-container" });
+  async onOpen() {
+  const container = this.containerEl.children[1];
+  container.empty();
 
-		// Replace this with your dynamic URL logic
-		const videoId = "Y_jUGNsRohw"; // Replace with actual ID logic
+  const playerContainer = container.createDiv({ cls: "youtube-video-container" });
+  playerContainer.id = "yt-player"; // Required for iframe API
 
-		videoContainer.innerHTML = `
-			<iframe width="100%" height="360"
-				src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}"
-				title="YouTube video player" 
-  				frameborder="0" 
-  				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-  				referrerpolicy="strict-origin-when-cross-origin" 
-			</iframe>
-		`;
-		console.log("The videoID use to build embedUrl", videoId);
-		//src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}"
-		
-		const tools = container.createDiv({ cls: "yt-toolbar" });
+  // Replace this with dynamic videoId logic later
+  const videoId = "Y_jUGNsRohw";
+  this.videoId = videoId;
 
-		// 1. Timestamp
-		const timestampBtn = tools.createEl("button", { text: "🕒", attr: { title: "Copy timestamp" } });
-		timestampBtn.onclick = () => {
-			// For now, placeholder
-			new Notice ("Capture logic goes here");
-		}; 
+  // Load YouTube Iframe API
+  await loadYouTubeIframeAPI();
 
-		// 2. Screenshot (placeholder)
-		const screenshotBtn = tools.createEl("button", { text: "📷", attr: { title: "Capture screenshot" } });
-		screenshotBtn.onclick = () => {
-			// For now, placeholder
-			new Notice ("screenshot Capture logic goes here");
-		}; 
+  // Create YouTube Player using API
+  await createYouTubePlayer(
+    "yt-player",
+    videoId,
+    this.plugin.settings,
+    (player) => {
+      this.playerWrapper = new PlayerWrapper(player);
+      console.log("✅ PlayerWrapper created");
+    },
+    (state) => {
+      console.log("▶️ Player state changed:", state);
+    }
+  );
 
-		// 3. Play/Pause
-		const playPauseBtn = tools.createEl("button", { text: "⏯️", attr: { title: "Play/Pause" } });
-		playPauseBtn.onclick = () => {
-			// For now, placeholder
-			new Notice ("Play/Pause logic goes here");
-		}; 
+  // Toolbar setup
+  const tools = container.createDiv({ cls: "yt-toolbar" });
 
-		// 4. Mute/Unmute
-		const muteBtn = tools.createEl("button", { text: "🔇", attr: { title: "Mute/Unmute" } });
-		muteBtn.onclick = () => {
-			// For now, placeholder
-			new Notice ("Mute/unmute logic goes here");
-		}; 
+  // 1. Timestamp button
+  const timestampBtn = tools.createEl("button", { text: "🕒", attr: { title: "Copy timestamp" } });
+  timestampBtn.onclick = () => {
+    if (!this.playerWrapper?.isPlayerReady()) {
+      new Notice("⏳ Player not ready");
+      return;
+    }
+    const time = Math.floor(this.playerWrapper.getCurrentTime());
+    const mins = Math.floor(time / 60).toString().padStart(2, "0");
+    const secs = (time % 60).toString().padStart(2, "0");
+    const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
+    navigator.clipboard.writeText(timestamp);
+    new Notice(`📋 Copied timestamp: ${timestamp}`);
+  };
 
-		// 5. Close
-		const closeBtn = tools.createEl("button", { text: "❌", attr: { title: "Close player" } });
-		closeBtn.onclick = () => this.leaf.detach();
+  // 2. Screenshot button
+  const screenshotBtn = tools.createEl("button", { text: "📷", attr: { title: "Capture screenshot" } });
+  screenshotBtn.onclick = () => {
+    new Notice("📸 Screenshot logic not implemented yet");
+  };
 
-	}
+  // 3. Play/Pause button
+  const playPauseBtn = tools.createEl("button", { text: "⏯️", attr: { title: "Play/Pause" } });
+  playPauseBtn.onclick = () => {
+    if (!this.playerWrapper?.isPlayerReady()) {
+      new Notice("⏳ Player not ready");
+      return;
+    }
+    const result = this.playerWrapper.togglePlayPause();
+    new Notice(result === "paused" ? "⏸️ Paused" : "▶️ Playing");
+  };
 
-	async onClose() {
-		// Cleanup if needed
-	}
+  // 4. Mute/Unmute
+  const muteBtn = tools.createEl("button", { text: "🔇", attr: { title: "Mute/Unmute" } });
+  muteBtn.onclick = () => {
+    if (!this.playerWrapper?.isPlayerReady()) {
+      new Notice("⏳ Player not ready");
+      return;
+    }
+    const player = (this.playerWrapper as any)["player"];
+    if (player.isMuted()) {
+      player.unMute();
+      new Notice("🔊 Unmuted");
+    } else {
+      player.mute();
+      new Notice("🔇 Muted");
+    }
+  };
+
+  // 5. Close player
+  const closeBtn = tools.createEl("button", { text: "❌", attr: { title: "Close player" } });
+  closeBtn.onclick = () => this.leaf.detach();
 }
+
+}
+// src/views/YouTubeView.ts ends here

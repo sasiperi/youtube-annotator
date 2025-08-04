@@ -31,7 +31,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Enable Transcript")
-			.setDesc("Show transcript automatically if available")
+			.setDesc("Future feature placeholder - Show transcript automatically if available")
 			.addToggle(toggle =>
 				toggle
 					.setValue(this.plugin.settings.enableTranscript)
@@ -43,7 +43,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Default Playback Speed")
-			.setDesc("Set the default playback speed for YouTube videos")
+			.setDesc("Set the default playback speed for your YouTube videos")
 			.addSlider(slider =>
 				slider
 					.setLimits(0.25, 2.0, 0.25)
