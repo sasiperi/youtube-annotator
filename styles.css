@@ -6,3 +6,36 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.youtube-video-container {
+  width: 100%;           
+  min-width: 100px;       
+  max-width: 100%;        
+  height: auto;           
+  display: flex;          
+  justify-content: center;
+}
+
+.youtube-video-container iframe {
+  width: 100%;               
+  max-width: 100%;           
+  height: auto;              
+  aspect-ratio: 4 / 3;      
+  border: 5px;              
+}
+
+
+.yt-toolbar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
+  padding: 10px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.yt-toolbar button {
+  font-size: 1rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+/* CSS Ends here
