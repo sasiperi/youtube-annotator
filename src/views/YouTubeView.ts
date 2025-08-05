@@ -29,8 +29,10 @@ export class YouTubeView extends ItemView {
   }
 
   async onLoad(): Promise<void> {
-    const viewState = this.leaf.getViewState();
-    this.videoId = viewState?.state?.videoId ?? null;
+    const viewState = await this.leaf.getViewState();
+    const videoId = viewState?.state?.videoId;
+    this.videoId = typeof videoId === "string" ? videoId : null;
+
     console.log("📥 onLoad: videoId =", this.videoId);
 
     if (this.videoId) {

@@ -15,6 +15,8 @@ import {
 import { YouTubeView } from "./views/YouTubeView";
 import { registerCommands } from "./commands";
 import { YoutubePromptModal } from "./modal/YoutubePromptModal";
+import { createNoteFromTemplate } from "./utils/createNoteFromTemplate";
+import { generateDateTimestamp } from "./utils/date-timestamp";
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
