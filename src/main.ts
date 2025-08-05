@@ -1,6 +1,6 @@
 // main.ts starts here 
 // main.ts
-import { Plugin, App, WorkspaceLeaf } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   VIEW_TYPE_YOUTUBE_PLAYER,
@@ -65,12 +65,19 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
       this.app,
       async (videoId: string, originalUrl: string) => {
         console.log("✅ Video ID from modal:", videoId);
-
+        // Step 1: Create note
+      try {
+        await createNoteFromTemplate(this.app, this.settings, videoId, originalUrl);
+        console.log("📝 Note created successfully");
+      } catch (err) {
+        console.error("❌ Failed to create note:", err);
+        new Notice("Note creation failed. Check template path or folder.");
+      }
+      // Step 2: Detach any existing views
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
         for (const leaf of leaves) {
           await leaf.detach();
         }
-
         await this.activateView(videoId);
       }
     );

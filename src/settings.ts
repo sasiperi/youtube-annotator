@@ -8,8 +8,9 @@ export interface YoutubeAnnotatorSettings {
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
 	templateFolder: string;       // e.g., "templates"
-	templateFilename: string;     // e.g., "youtube_template.md"
+	templateFile: string;     // e.g., "youtube_template.md"
 	filenamePrefix: string;       // e.g., "YT_"
+	notesFolder: string;
 	timestampFormat: DateTimestampFormat;
 }
 
@@ -19,8 +20,9 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	defaultPlaybackSpeed: 1.0,
 	lastUsedUrl: "",
 	templateFolder: "",       // e.g., "templates"
-	templateFilename: "youtube_template.md",     // e.g., "youtube_template.md"
+	templateFile: "youtube_template.md",     // e.g., "youtube_template.md"
 	filenamePrefix: "TY_",       // e.g., "YT_"
+	notesFolder: "YouTube_Notes",
 	timestampFormat: DateTimestampFormat.Compact, 
 };
 
@@ -70,9 +72,9 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
       .addText(text =>
         text
           .setPlaceholder("youtube_template.md")
-          .setValue(this.plugin.settings.templateFilename)
+          .setValue(this.plugin.settings.templateFile)
           .onChange(async (value) => {
-            this.plugin.settings.templateFilename = value;
+            this.plugin.settings.templateFile = value;
             await this.plugin.saveSettings();
           })
       );
