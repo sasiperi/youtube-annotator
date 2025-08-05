@@ -1,4 +1,6 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+// YoutubePromptModal starts here
+import { App, Modal, Notice, Setting, TFile } from "obsidian";
+import { generateFilename } from "utils/date-timestamp";
 export class YoutubePromptModal extends Modal {
   public videoUrl: string | null = null;
   public videoId: string | null = null;
@@ -9,7 +11,7 @@ export class YoutubePromptModal extends Modal {
     super(app);
   }
 
-  onOpen() {
+  async onOpen() {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "Paste YouTube URL" });
 
@@ -47,3 +49,4 @@ export class YoutubePromptModal extends Modal {
     contentEl.empty();
   }
 }
+// YoutubePromptModal ends here

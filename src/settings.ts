@@ -6,6 +6,10 @@ export interface YoutubeAnnotatorSettings {
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
+	templateFolder: string;       // e.g., "templates"
+	templateFilename: string;     // e.g., "youtube_template.md"
+	filenamePrefix: string;       // e.g., "YT_"
+  	filenameTimestampFormat: string;  // 👈 add this
 }
 
 // Default values for your plugin settings
@@ -13,6 +17,10 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	enableTranscript: true,
 	defaultPlaybackSpeed: 1.0,
 	lastUsedUrl: "",
+	templateFolder: "",       // e.g., "templates"
+	templateFilename: "youtube_template.md",     // e.g., "youtube_template.md"
+	filenamePrefix: "TY_",       // e.g., "YT_"
+	filenameTimestampFormat:  "YYYYMMDD_HHmm" 
 };
 
 // Settings tab UI for Obsidian’s plugin settings panel
@@ -54,5 +62,18 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		new Setting(containerEl)
+      .setName("Template Filename")
+      .setDesc("Filename of the note template to use")
+      .addText(text =>
+        text
+          .setPlaceholder("youtube_template.md")
+          .setValue(this.plugin.settings.templateFilename)
+          .onChange(async (value) => {
+            this.plugin.settings.templateFilename = value;
+            await this.plugin.saveSettings();
+          })
+      );
 	}
 }

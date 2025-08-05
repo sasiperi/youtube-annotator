@@ -1,12 +1,11 @@
 // src/views/YouTubeView.ts starts here
-
+// YouTubeView.ts
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
 import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
-
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -29,62 +28,94 @@ export class YouTubeView extends ItemView {
     return "YouTube Annotator";
   }
 
-  async onOpen() {
-  const container = this.containerEl.children[1];
-  container.empty();
+  async onLoad(): Promise<void> {
+    const viewState = this.leaf.getViewState();
+    this.videoId = viewState?.state?.videoId ?? null;
+    console.log("📥 onLoad: videoId =", this.videoId);
 
-  const playerContainer = container.createDiv({ cls: "youtube-video-container" });
-  playerContainer.id = "yt-player"; // Required for iframe API
-
-  // Replace this with dynamic videoId logic later
-  const videoId = "Y_jUGNsRohw";
-  this.videoId = videoId;
-
-  // Load YouTube Iframe API
-  await loadYouTubeIframeAPI();
-
-  // Create YouTube Player using API
-  await createYouTubePlayer(
-    "yt-player",
-    videoId,
-    this.plugin.settings,
-    (player) => {
-      this.playerWrapper = new PlayerWrapper(player);
-      console.log("✅ PlayerWrapper created");
-    },
-    (state) => {
-      console.log("▶️ Player state changed:", state);
+    if (this.videoId) {
+      await this.renderPlayer();
+    } else {
+      new Notice("❌ No videoId passed to YouTubeView.");
     }
-  );
+  }
 
-  // Toolbar setup
-  const tools = container.createDiv({ cls: "yt-toolbar" });
+  async setState(state: any): Promise<void> {
+    const newVideoId = state?.videoId ?? null;
 
-  // 1. Timestamp button
-  const timestampBtn = tools.createEl("button", { text: "🕒", attr: { title: "Copy timestamp" } });
-  timestampBtn.onclick = () => {
-    if (!this.playerWrapper?.isPlayerReady()) {
-      new Notice("⏳ Player not ready");
+    if (!newVideoId || newVideoId === this.videoId) {
+      console.log("⚠️ setState: No new videoId or unchanged");
       return;
     }
-    const time = Math.floor(this.playerWrapper.getCurrentTime());
-    const mins = Math.floor(time / 60).toString().padStart(2, "0");
-    const secs = (time % 60).toString().padStart(2, "0");
-    const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
-    navigator.clipboard.writeText(timestamp);
-    new Notice(`📋 Copied timestamp: ${timestamp}`);
-  };
 
-  // 2. Screenshot button
-  const screenshotBtn = tools.createEl("button", { text: "📷", attr: { title: "Capture screenshot" } });
-  screenshotBtn.onclick = () => {
-    new Notice("📸 Screenshot logic not implemented yet");
-  };
+    console.log("🔁 setState: switching to new videoId =", newVideoId);
+    this.videoId = newVideoId;
+    await this.renderPlayer();
+  }
 
-  // 3. Close player
-  const closeBtn = tools.createEl("button", { text: "❌", attr: { title: "Close player" } });
-  closeBtn.onclick = () => this.leaf.detach();
+  async renderPlayer() {
+    const container = this.containerEl.children[1];
+    container.empty();
+
+    if (!this.videoId) {
+      new Notice("❌ No videoId provided");
+      return;
+    }
+
+    console.log("📺 Rendering player for videoId:", this.videoId);
+
+    const playerContainer = container.createDiv({ cls: "youtube-video-container" });
+    playerContainer.id = "yt-player";
+
+    await loadYouTubeIframeAPI();
+    console.log("📥 Loading YouTube Iframe API...");
+
+    await createYouTubePlayer(
+      "yt-player",
+      this.videoId,
+      this.plugin.settings,
+      (player) => {
+        this.playerWrapper = new PlayerWrapper(player);
+        console.log("✅ PlayerWrapper created");
+      },
+      (state) => {
+        console.log("▶️ Player state changed:", state);
+      }
+    );
+
+    const tools = container.createDiv({ cls: "yt-toolbar" });
+
+    const timestampBtn = tools.createEl("button", {
+      text: "🕒",
+      attr: { title: "Copy timestamp" },
+    });
+    timestampBtn.onclick = () => {
+      if (!this.playerWrapper?.isPlayerReady()) {
+        new Notice("⏳ Player not ready");
+        return;
+      }
+      const time = Math.floor(this.playerWrapper.getCurrentTime());
+      const mins = Math.floor(time / 60).toString().padStart(2, "0");
+      const secs = (time % 60).toString().padStart(2, "0");
+      const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
+      navigator.clipboard.writeText(timestamp);
+      new Notice(`📋 Copied timestamp: ${timestamp}`);
+    };
+
+    const screenshotBtn = tools.createEl("button", {
+      text: "📷",
+      attr: { title: "Capture screenshot" },
+    });
+    screenshotBtn.onclick = () => {
+      new Notice("📸 Screenshot logic not implemented yet");
+    };
+
+    const closeBtn = tools.createEl("button", {
+      text: "❌",
+      attr: { title: "Close player" },
+    });
+    closeBtn.onclick = () => this.leaf.detach();
+  }
 }
 
-}
 // src/views/YouTubeView.ts ends here
