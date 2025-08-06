@@ -1,6 +1,6 @@
 // main.ts starts here 
 // main.ts
-import { Plugin, App, WorkspaceLeaf, Notice } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   VIEW_TYPE_YOUTUBE_PLAYER,
@@ -53,6 +53,33 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
       VIEW_TYPE_YOUTUBE_ANNOTATOR,
       (leaf) => new YouTubeView(leaf, this)
     );
+
+    this.registerEvent(
+  this.app.workspace.on("file-open", async (file) => {
+    if (!file || file.extension !== "md") return;
+
+    const content = await this.app.vault.read(file);
+    const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!yamlMatch) return;
+
+    const yaml = parseYaml(yamlMatch[1]);
+    const url = yaml?.originalUrl;
+    const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/);
+    if (!match) return;
+
+    const videoId = match[1];
+
+    // Detach any existing YouTube views
+    const leaves = this.app.workspace.getLeavesOfType("youtube-annotator");
+    for (const leaf of leaves) {
+      await leaf.detach();
+    }
+
+    // Open the player view with this videoId
+    await this.activateView(videoId);
+  })
+);
+
 
     this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
