@@ -78,12 +78,30 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     // Open the player view with this videoId
     await this.activateView(videoId);
   })
-);
+    );
 
+  this.registerMarkdownPostProcessor((el, ctx) => {
+    el.querySelectorAll('a[href^="ytseek://"]').forEach(anchor => {
+      anchor.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const href = anchor.getAttribute("href");
+        const seconds = parseInt(href?.replace("ytseek://", "") ?? "", 10);
+        if (isNaN(seconds)) return;
 
-    this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
+        const leaves = this.app.workspace.getLeavesOfType("youtube-annotator");
+        const view = leaves[0]?.view as any;
+        if (view?.playerWrapper?.isPlayerReady()) {
+          view.playerWrapper.seekTo(seconds, true);
+          new Notice(`⏩ Jumped to ${seconds} sec`);
+        } else {
+          new Notice("⏳ Player not ready or not open.");
+        }
+      });
+    });
+  });
+
+  this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
-
     console.log(`[${PLUGIN_ID}] initialized`);
   }
 

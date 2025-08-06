@@ -135,10 +135,15 @@ export class YouTubeView extends ItemView {
             return;
           }
           const time = Math.floor(this.playerWrapper.getCurrentTime());
-          const mins = Math.floor(time / 60).toString().padStart(2, "0");
+          const hours = Math.floor(time / 3600);
+          const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
           const secs = (time % 60).toString().padStart(2, "0");
-          const anchor = this.getVideoSeekAnchor(time);
-          const link = `[${mins}:${secs}](ytseek://${time})`;
+
+          const timestamp = hours > 0
+            ? `${hours.toString().padStart(2, "0")}:${mins}:${secs}`
+            : `${mins}:${secs}`;
+
+          const link = `[${timestamp}](ytseek://${time})`;
           navigator.clipboard.writeText(link);
           new Notice(`📋 Copied timestamp: ${link}`);
         };
@@ -159,31 +164,25 @@ export class YouTubeView extends ItemView {
       }
     );
   this.registerDomEvent(this.containerEl, "click", (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName !== "A") return;
+  const target = e.target as HTMLElement;
+  if (target.tagName !== "A") return;
 
-    const href = (target as HTMLAnchorElement).getAttribute("href");
-    if (!href?.startsWith("#seek-")) return;
+  const href = (target as HTMLAnchorElement).getAttribute("href");
+  if (!href?.startsWith("ytseek://")) return;
 
-    e.preventDefault();
+  e.preventDefault();
 
-    const seconds = parseInt(href.replace("#seek-", ""), 10);
-    if (isNaN(seconds)) return;
+  const seconds = parseInt(href.replace("ytseek://", ""), 10);
+  if (isNaN(seconds)) return;
 
-    if (this.playerWrapper?.isPlayerReady()) {
-      const isCtrlShift = e.ctrlKey && e.shiftKey;
-      const isAltShift = e.altKey && e.shiftKey;
-      if (isCtrlShift || isAltShift) {
-        this.playerWrapper.seekTo(seconds, true);
-        new Notice(`⏩ Seeked to ${seconds} sec (internal)`);
-      } else {
-        const fullUrl = this.getVideoUrlWithTime(seconds);
-        window.open(fullUrl, "_blank");
-      }
-    } else {
-      new Notice("⏳ Player not ready");
-    }
-  });
+  if (this.playerWrapper?.isPlayerReady()) {
+    // 💡 Always seek internally
+    this.playerWrapper.seekTo(seconds, true);
+    new Notice(`⏩ Seeked to ${seconds} sec`);
+  } else {
+    new Notice("⏳ Player not ready");
+  }
+});
 
   }
 }
