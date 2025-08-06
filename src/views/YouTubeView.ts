@@ -33,7 +33,8 @@ export class YouTubeView extends ItemView {
 
   async onLoad(): Promise<void> {
     const viewState = this.leaf.getViewState();
-    this.videoId = viewState?.state?.videoId as string;
+    const stateVideoId = viewState?.state?.videoId;
+    this.videoId = typeof stateVideoId === "string" ? stateVideoId : null;
     console.log("📥 onLoad: videoId =", this.videoId);
 
     if (!this.videoId) {
@@ -43,11 +44,13 @@ export class YouTubeView extends ItemView {
         const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
         if (yamlMatch) {
           const yaml = parseYaml(yamlMatch[1]);
-          const url = yaml?.youtube;
+          const url = yaml?.originalUrl;
           console.log("📄 Found YouTube URL in YAML:", url);
-          const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+          //const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+          const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/);
           if (match) {
             this.videoId = match[1];
+            
           }
         }
       }
@@ -135,7 +138,7 @@ export class YouTubeView extends ItemView {
           const mins = Math.floor(time / 60).toString().padStart(2, "0");
           const secs = (time % 60).toString().padStart(2, "0");
           const anchor = this.getVideoSeekAnchor(time);
-          const link = `[${mins}:${secs}](${anchor})`;
+          const link = `[${mins}:${secs}](ytseek://${time})`;
           navigator.clipboard.writeText(link);
           new Notice(`📋 Copied timestamp: ${link}`);
         };
@@ -155,35 +158,32 @@ export class YouTubeView extends ItemView {
         console.log("▶️ Player state changed:", state);
       }
     );
+  this.registerDomEvent(this.containerEl, "click", (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== "A") return;
 
-    this.registerDomEvent(document, "click", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (target.tagName !== "A") return;
+    const href = (target as HTMLAnchorElement).getAttribute("href");
+    if (!href?.startsWith("#seek-")) return;
 
-  const href = (target as HTMLAnchorElement).getAttribute("href");
-  if (!href?.startsWith("#seek-")) return;
+    e.preventDefault();
 
-  const seconds = parseInt(href.replace("#seek-", ""), 10);
-  if (isNaN(seconds)) return;
+    const seconds = parseInt(href.replace("#seek-", ""), 10);
+    if (isNaN(seconds)) return;
 
-  e.preventDefault();
-
-  const isCtrlShift = e.ctrlKey && e.shiftKey;
-  const isAltShift = e.altKey && e.shiftKey;
-      if (this.playerWrapper?.isPlayerReady()) {
-        if (isCtrlShift || isAltShift) {
-          // Special click — jump in embedded player
-          this.playerWrapper.seekTo(seconds, true);
-          new Notice(`⏩ Seeked to ${seconds} sec (internal)`);
-        } else {
-          // Default click behavior — open in new leaf (or browser)
-          const fullUrl = this.getVideoUrlWithTime(seconds);
-          window.open(fullUrl, "_blank");
-        }
+    if (this.playerWrapper?.isPlayerReady()) {
+      const isCtrlShift = e.ctrlKey && e.shiftKey;
+      const isAltShift = e.altKey && e.shiftKey;
+      if (isCtrlShift || isAltShift) {
+        this.playerWrapper.seekTo(seconds, true);
+        new Notice(`⏩ Seeked to ${seconds} sec (internal)`);
       } else {
-        new Notice("⏳ Player not ready");
+        const fullUrl = this.getVideoUrlWithTime(seconds);
+        window.open(fullUrl, "_blank");
       }
-    });
+    } else {
+      new Notice("⏳ Player not ready");
+    }
+  });
 
   }
 }
