@@ -20,8 +20,8 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	defaultPlaybackSpeed: 1.0,
 	lastUsedUrl: "",
 	templateFolder: "",       // e.g., "templates"
-	templateFile: "youtube_template.md",     // e.g., "youtube_template.md"
-	filenamePrefix: "TY_",       // e.g., "YT_"
+	templateFile: "/Templates/youtube_template.md",     // e.g., "youtube_template.md"
+	filenamePrefix: "YT_",       // e.g., "YT_"
 	notesFolder: "YouTube_Notes",
 	timestampFormat: DateTimestampFormat.Compact, 
 };
@@ -68,7 +68,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 
 	new Setting(containerEl)
       .setName("Template Filename")
-      .setDesc("Filename of the note template to use")
+      .setDesc("New note content created based on the template")
       .addText(text =>
         text
           .setPlaceholder("youtube_template.md")
@@ -81,7 +81,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 	
 	new Setting(containerEl)
       .setName("Add Date-Timestamp")
-      .setDesc("Add this date/timestamp at the end of each newly created file")
+      .setDesc("Date timestamp added at the end of new note creation")
 	  .addDropdown((dropdown) =>
 		dropdown
 		.addOptions({

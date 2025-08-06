@@ -1,7 +1,8 @@
 // utils/createNoteFromTemplate.ts
-import { App, TFile, normalizePath } from "obsidian";
+import { App, Notice, TFile, normalizePath } from "obsidian";
 import { YoutubeAnnotatorSettings } from "../settings";
 import { generateNoteFilename } from "../utils/generateFilenames";
+console.log("🛠️ createNoteFromTemplate called");
 
 export async function createNoteFromTemplate(
   app: App,
@@ -11,6 +12,7 @@ export async function createNoteFromTemplate(
 ): Promise<void> {
   const { fullPath: newNotePath, filename } = generateNoteFilename(settings);
   const templatePath = normalizePath(settings.templateFile);
+  console.log("This is the template path", templatePath);
 
   let content = "";
 
@@ -18,9 +20,14 @@ export async function createNoteFromTemplate(
     const templateFile = app.vault.getAbstractFileByPath(templatePath);
     if (templateFile instanceof TFile) {
       content = await app.vault.read(templateFile);
+    } else {
+      new Notice("⚠️ Template file not found. Please check the path in settings.");
+      return;
     }
   } catch (err) {
-    console.warn("⚠️ Could not read template file:", err);
+    console.warn("⚠️ Error reading template file:", err);
+    new Notice("⚠️ Could not read template file. See console for details.");
+    return;
   }
 
   // Replace placeholders
@@ -30,11 +37,19 @@ export async function createNoteFromTemplate(
     .replace(/{{filename}}/g, filename);
 
   // Create the note
-  await app.vault.create(newNotePath, content);
+  try {
+    // Create the note
+    await app.vault.create(newNotePath, content);
 
-  // Open the file in editor
-  const created = app.vault.getAbstractFileByPath(newNotePath);
-  if (created instanceof TFile) {
-    await app.workspace.getLeaf(true).openFile(created);
+    // Open the file in editor
+    const created = app.vault.getAbstractFileByPath(newNotePath);
+    if (created instanceof TFile) {
+      await app.workspace.getLeaf(true).openFile(created);
+    } else {
+      new Notice("✅ Note created but could not open it.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to create note:", err);
+    new Notice("❌ Failed to create note. See console for details.");
   }
 }
