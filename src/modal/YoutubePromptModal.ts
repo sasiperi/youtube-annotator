@@ -1,16 +1,17 @@
 // YoutubePromptModal starts here
-// YoutubePromptModal.ts
 import { App, Modal, Notice } from "obsidian";
 
 export class YoutubePromptModal extends Modal {
-  public videoUrl: string | null = null;
+  public videoAuthor: string | null = null;
+  public videoTitle: string | null = null;
   public videoId: string | null = null;
+  public videoUrl: string | null = null;
   public embedUrl: string | null = null;
   public watchUrl: string | null = null;
 
   constructor(
     app: App,
-    private onSubmit: (videoId: string, originalUrl: string) => void
+    private onSubmit: (videoId: string, originalUrl: string, videoAuthor: string, videoTitle: string) => void
   ) {
     super(app);
   }
@@ -49,7 +50,13 @@ export class YoutubePromptModal extends Modal {
       this.videoUrl = `https://youtu.be/${videoId}`;
       this.watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
       this.embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      this.onSubmit(videoId, input); // ✅ triggers note creation and view
+      //this.onSubmit(videoId, input, this.videoAuthor ?? "", this.videoTitle ?? "",); // ✅ triggers note creation and view
+      this.onSubmit(
+        videoId ?? "",               // string
+        input ?? "",                 // originalUrl
+        this.videoAuthor ?? "",      // videoAuthor
+        this.videoTitle ?? ""        // videoTitle
+      );
       this.close();
     } else {
       new Notice("❌ Invalid YouTube URL");

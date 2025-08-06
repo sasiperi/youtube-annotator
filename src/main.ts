@@ -61,29 +61,45 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   }
 
   async openModal() {
-    const modal = new YoutubePromptModal(
-      this.app,
-      async (videoId: string, originalUrl: string) => {
-        console.log("✅ Video ID from modal:", videoId);
-        // Step 1: Create note
+  const modal = new YoutubePromptModal(
+    this.app,
+    async (
+      videoId: string,
+      originalUrl: string,
+      videoAuthor: string,
+      videoTitle: string
+    ) => {
+      console.log("✅ Video ID from modal:", videoId);
+
+      // Step 1: Create note
       try {
-        await createNoteFromTemplate(this.app, this.settings, videoId, originalUrl);
+        await createNoteFromTemplate(
+          this.app,
+          this.settings,
+          videoAuthor,
+          videoTitle,
+          videoId,
+          originalUrl
+        );
         console.log("📝 Note created successfully");
       } catch (err) {
         console.error("❌ Failed to create note:", err);
         new Notice("Note creation failed. Check template path or folder.");
       }
-      // Step 2: Detach any existing views
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
-        for (const leaf of leaves) {
-          await leaf.detach();
-        }
-        await this.activateView(videoId);
-      }
-    );
 
-    modal.open();
-  }
+      // Step 2: Detach any existing views
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
+      for (const leaf of leaves) {
+        await leaf.detach();
+      }
+
+      await this.activateView(videoId);
+    }
+  );
+
+  modal.open();
+}
+
 
   async saveSettings() {
     await this.saveData(this.settings);

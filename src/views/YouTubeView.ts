@@ -11,7 +11,10 @@ export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
   currentSpeedIndex = 0;
   speeds = [1, 1.5, 2];
+  videoAuthor: string | null = null;
+  videoTitle: string | null = null;
   videoId: string | null = null;
+  
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -136,6 +139,16 @@ export class YouTubeView extends ItemView {
           navigator.clipboard.writeText(link);
           new Notice(`📋 Copied timestamp: ${link}`);
         };
+
+  // Fetch metadata YouTube Meta data
+        const meta = player.getVideoData?.();
+        if (meta) {
+          this.videoTitle = meta.title;
+          this.videoAuthor = meta.author;
+          console.log("🎬 Title:", this.videoTitle);
+          console.log("📡 Author:", this.videoAuthor);
+        }
+
         console.log("✅ PlayerWrapper created and timestamp button enabled");
       },
       (state) => {
@@ -144,19 +157,34 @@ export class YouTubeView extends ItemView {
     );
 
     this.registerDomEvent(document, "click", (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "A") {
-        const href = (target as HTMLAnchorElement).getAttribute("href");
-        if (href?.startsWith("#seek-")) {
-          e.preventDefault();
-          const seconds = parseInt(href.replace("#seek-", ""), 10);
-          if (!isNaN(seconds) && this.playerWrapper?.isPlayerReady()) {
-            this.playerWrapper.seekTo(seconds, true);
-            new Notice(`⏩ Jumped to ${seconds} sec`);
-          }
+  const target = e.target as HTMLElement;
+  if (target.tagName !== "A") return;
+
+  const href = (target as HTMLAnchorElement).getAttribute("href");
+  if (!href?.startsWith("#seek-")) return;
+
+  const seconds = parseInt(href.replace("#seek-", ""), 10);
+  if (isNaN(seconds)) return;
+
+  e.preventDefault();
+
+  const isCtrlShift = e.ctrlKey && e.shiftKey;
+  const isAltShift = e.altKey && e.shiftKey;
+      if (this.playerWrapper?.isPlayerReady()) {
+        if (isCtrlShift || isAltShift) {
+          // Special click — jump in embedded player
+          this.playerWrapper.seekTo(seconds, true);
+          new Notice(`⏩ Seeked to ${seconds} sec (internal)`);
+        } else {
+          // Default click behavior — open in new leaf (or browser)
+          const fullUrl = this.getVideoUrlWithTime(seconds);
+          window.open(fullUrl, "_blank");
         }
+      } else {
+        new Notice("⏳ Player not ready");
       }
     });
+
   }
 }
 

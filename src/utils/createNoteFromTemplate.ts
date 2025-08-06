@@ -7,6 +7,8 @@ console.log("🛠️ createNoteFromTemplate called");
 export async function createNoteFromTemplate(
   app: App,
   settings: YoutubeAnnotatorSettings,
+  videoAuthor: string,
+  videoTitle:string,
   videoId: string,
   originalUrl: string
 ): Promise<void> {
@@ -30,10 +32,12 @@ export async function createNoteFromTemplate(
     return;
   }
 
-  // Replace placeholders
+  // Replace placeholders 
   content = content
+    .replace(/{{videoAuthor}}/g, videoAuthor)  
+    .replace(/{{videoTitle}}/g, videoTitle)
     .replace(/{{videoId}}/g, videoId)
-    .replace(/{{originalUrl}}/g, originalUrl)
+    .replace(/{{originalUrl}}/g, originalUrl)  
     .replace(/{{filename}}/g, filename);
 
   // Create the note
