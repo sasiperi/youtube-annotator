@@ -27,7 +27,7 @@ export async function createNoteFromTemplate(
       return;
     }
   } catch (err) {
-    console.warn("⚠️ Error reading template file:", err);
+    //console.warn("⚠️ Error reading template file:", err);
     new Notice("⚠️ Could not read template file. See console for details.");
     return;
   }
