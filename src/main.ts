@@ -81,24 +81,35 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     );
 
   this.registerMarkdownPostProcessor((el, ctx) => {
-    el.querySelectorAll('a[href^="ytseek://"]').forEach(anchor => {
-      anchor.addEventListener("click", async (e) => {
-        e.preventDefault();
-        const href = anchor.getAttribute("href");
-        const seconds = parseInt(href?.replace("ytseek://", "") ?? "", 10);
-        if (isNaN(seconds)) return;
+  const anchors = el.querySelectorAll('a[href^="ytseek://"]');
+  anchors.forEach((anchor) => {
+    anchor.addEventListener("click", async (e) => {
+      e.preventDefault();  // ⛔ Prevent default external link handling
+      e.stopPropagation(); // ⛔ Stop event from bubbling to Obsidian's external handler
 
-        const leaves = this.app.workspace.getLeavesOfType("youtube-annotator");
-        const view = leaves[0]?.view as any;
-        if (view?.playerWrapper?.isPlayerReady()) {
-          view.playerWrapper.seekTo(seconds, true);
-          new Notice(`⏩ Jumped to ${seconds} sec`);
-        } else {
-          new Notice("⏳ Player not ready or not open.");
-        }
-      });
+      const href = anchor.getAttribute("href");
+      const seconds = parseInt(href?.replace("ytseek://", "") ?? "", 10);
+      if (isNaN(seconds)) {
+        new Notice("Invalid timestamp");
+        return;
+      }
+
+      // Find existing YouTube view
+      const leaf = this.app.workspace
+        .getLeavesOfType("youtube-annotator")
+        .first();
+      const view = leaf?.view as any;
+
+      if (view?.playerWrapper?.isPlayerReady()) {
+        view.playerWrapper.seekTo(seconds, true);
+        new Notice(`⏩ Jumped to ${seconds} sec`);
+      } else {
+        new Notice("⏳ Player not ready or not open.");
+      }
     });
   });
+});
+
 
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
