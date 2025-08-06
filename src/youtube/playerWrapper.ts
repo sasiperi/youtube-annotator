@@ -71,6 +71,12 @@ export class PlayerWrapper {
   return state === YT.PlayerState.PLAYING || state === YT.PlayerState.PAUSED;
   }
 
+  seekTo(seconds: number, allowSeekAhead = true) {
+  if (this.player && typeof this.player.seekTo === "function") {
+    this.player.seekTo(seconds, allowSeekAhead);
+  }
+}
+
 
   destroy() {
     if (typeof (this.player as any).destroy === "function") {

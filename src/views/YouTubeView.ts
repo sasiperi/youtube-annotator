@@ -70,6 +70,14 @@ export class YouTubeView extends ItemView {
     await this.renderPlayer();
   }
 
+  getVideoUrlWithTime(seconds: number): string {
+    return `https://youtu.be/${this.videoId}?t=${seconds}`;
+  }
+
+  getVideoSeekAnchor(seconds: number): string {
+    return `#seek-${seconds}`;
+  }
+
   async renderPlayer() {
     const container = this.containerEl.children[1];
     container.empty();
@@ -123,9 +131,10 @@ export class YouTubeView extends ItemView {
           const time = Math.floor(this.playerWrapper.getCurrentTime());
           const mins = Math.floor(time / 60).toString().padStart(2, "0");
           const secs = (time % 60).toString().padStart(2, "0");
-          const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
-          navigator.clipboard.writeText(timestamp);
-          new Notice(`📋 Copied timestamp: ${timestamp}`);
+          const anchor = this.getVideoSeekAnchor(time);
+          const link = `[${mins}:${secs}](${anchor})`;
+          navigator.clipboard.writeText(link);
+          new Notice(`📋 Copied timestamp: ${link}`);
         };
         console.log("✅ PlayerWrapper created and timestamp button enabled");
       },
@@ -133,6 +142,21 @@ export class YouTubeView extends ItemView {
         console.log("▶️ Player state changed:", state);
       }
     );
+
+    this.registerDomEvent(document, "click", (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "A") {
+        const href = (target as HTMLAnchorElement).getAttribute("href");
+        if (href?.startsWith("#seek-")) {
+          e.preventDefault();
+          const seconds = parseInt(href.replace("#seek-", ""), 10);
+          if (!isNaN(seconds) && this.playerWrapper?.isPlayerReady()) {
+            this.playerWrapper.seekTo(seconds, true);
+            new Notice(`⏩ Jumped to ${seconds} sec`);
+          }
+        }
+      }
+    });
   }
 }
 
