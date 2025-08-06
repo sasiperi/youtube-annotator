@@ -1,6 +1,6 @@
 // src/views/YouTubeView.ts starts here
 // YouTubeView.ts
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
 import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
@@ -29,11 +29,26 @@ export class YouTubeView extends ItemView {
   }
 
   async onLoad(): Promise<void> {
-    const viewState = await this.leaf.getViewState();
-    const videoId = viewState?.state?.videoId;
-    this.videoId = typeof videoId === "string" ? videoId : null;
-
+    const viewState = this.leaf.getViewState();
+    this.videoId = viewState?.state?.videoId as string;
     console.log("📥 onLoad: videoId =", this.videoId);
+
+    if (!this.videoId) {
+      const file = this.app.workspace.getActiveFile();
+      if (file instanceof TFile) {
+        const content = await this.app.vault.read(file);
+        const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        if (yamlMatch) {
+          const yaml = parseYaml(yamlMatch[1]);
+          const url = yaml?.youtube;
+          console.log("📄 Found YouTube URL in YAML:", url);
+          const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+          if (match) {
+            this.videoId = match[1];
+          }
+        }
+      }
+    }
 
     if (this.videoId) {
       await this.renderPlayer();
@@ -69,40 +84,12 @@ export class YouTubeView extends ItemView {
     const playerContainer = container.createDiv({ cls: "youtube-video-container" });
     playerContainer.id = "yt-player";
 
-    await loadYouTubeIframeAPI();
-    console.log("📥 Loading YouTube Iframe API...");
-
-    await createYouTubePlayer(
-      "yt-player",
-      this.videoId,
-      this.plugin.settings,
-      (player) => {
-        this.playerWrapper = new PlayerWrapper(player);
-        console.log("✅ PlayerWrapper created");
-      },
-      (state) => {
-        console.log("▶️ Player state changed:", state);
-      }
-    );
-
     const tools = container.createDiv({ cls: "yt-toolbar" });
 
     const timestampBtn = tools.createEl("button", {
       text: "🕒",
-      attr: { title: "Copy timestamp" },
+      attr: { title: "Copy timestamp", disabled: "true" },
     });
-    timestampBtn.onclick = () => {
-      if (!this.playerWrapper?.isPlayerReady()) {
-        new Notice("⏳ Player not ready");
-        return;
-      }
-      const time = Math.floor(this.playerWrapper.getCurrentTime());
-      const mins = Math.floor(time / 60).toString().padStart(2, "0");
-      const secs = (time % 60).toString().padStart(2, "0");
-      const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
-      navigator.clipboard.writeText(timestamp);
-      new Notice(`📋 Copied timestamp: ${timestamp}`);
-    };
 
     const screenshotBtn = tools.createEl("button", {
       text: "📷",
@@ -117,6 +104,35 @@ export class YouTubeView extends ItemView {
       attr: { title: "Close player" },
     });
     closeBtn.onclick = () => this.leaf.detach();
+
+    await loadYouTubeIframeAPI();
+    console.log("📥 Loading YouTube Iframe API...");
+
+    await createYouTubePlayer(
+      "yt-player",
+      this.videoId,
+      this.plugin.settings,
+      (player) => {
+        this.playerWrapper = new PlayerWrapper(player);
+        timestampBtn.removeAttribute("disabled");
+        timestampBtn.onclick = () => {
+          if (!this.playerWrapper?.isPlayerReady()) {
+            new Notice("⏳ Player not ready");
+            return;
+          }
+          const time = Math.floor(this.playerWrapper.getCurrentTime());
+          const mins = Math.floor(time / 60).toString().padStart(2, "0");
+          const secs = (time % 60).toString().padStart(2, "0");
+          const timestamp = `[[${mins}:${secs}]](#${mins}:${secs})`;
+          navigator.clipboard.writeText(timestamp);
+          new Notice(`📋 Copied timestamp: ${timestamp}`);
+        };
+        console.log("✅ PlayerWrapper created and timestamp button enabled");
+      },
+      (state) => {
+        console.log("▶️ Player state changed:", state);
+      }
+    );
   }
 }
 

@@ -67,8 +67,10 @@ export class PlayerWrapper {
   }
 
   isPlayerReady(): boolean {
-    return this.isReady;
+  const state = this.player?.getPlayerState?.();
+  return state === YT.PlayerState.PLAYING || state === YT.PlayerState.PAUSED;
   }
+
 
   destroy() {
     if (typeof (this.player as any).destroy === "function") {
