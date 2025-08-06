@@ -1,7 +1,9 @@
 // utils/createNoteFromTemplate.ts
-import { App, Notice, TFile, normalizePath } from "obsidian";
+import { App, Notice, TFile, normalizePath,moment } from "obsidian";
 import { YoutubeAnnotatorSettings } from "../settings";
 import { generateNoteFilename } from "../utils/generateFilenames";
+import { generateDateTimestamp } from "./date-timestamp";
+
 console.log("🛠️ createNoteFromTemplate called");
 
 export async function createNoteFromTemplate(
@@ -14,6 +16,10 @@ export async function createNoteFromTemplate(
 ): Promise<void> {
   const { fullPath: newNotePath, filename } = generateNoteFilename(settings);
   const templatePath = normalizePath(settings.templateFile);
+  const formattedDate = generateDateTimestamp(settings.timestampFormat);
+  
+
+  
   console.log("This is the template path", templatePath);
 
   let content = "";
@@ -38,7 +44,10 @@ export async function createNoteFromTemplate(
     .replace(/{{videoTitle}}/g, videoTitle)
     .replace(/{{videoId}}/g, videoId)
     .replace(/{{originalUrl}}/g, originalUrl)  
-    .replace(/{{filename}}/g, filename);
+    .replace(/{{filename}}/g, filename)
+    .replace(/{{date}}/g, formattedDate);
+  
+    console.log("📄 Final note content:\n", content);
 
   // Create the note
   try {
