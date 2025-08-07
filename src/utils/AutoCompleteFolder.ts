@@ -1,32 +1,31 @@
 // utils/AutoCompleteFolder.ts
-import { TAbstractFile, FuzzySuggestModal, App, TFolder } from "obsidian";
+import { TAbstractFile, TFolder, App, AbstractInputSuggest } from "obsidian";
 
-export class AutoCompleteFolder extends FuzzySuggestModal<string> {
-  constructor(app: App, inputEl: HTMLInputElement, private suggestions: string[]) {
-    super(app);
+export class FolderSuggest extends AbstractInputSuggest<string> {
+  private folders: string[];
 
-    // Only bind behavior — don’t store inputEl directly
-    inputEl.addEventListener("focus", () => this.open());
+  constructor(app: App, private inputEl: HTMLInputElement) {
+    super(app, inputEl);
 
-    // Optional: You can also open on input
-    // inputEl.addEventListener("input", () => this.open());
+    // Only folders (no files)
+    this.folders = app.vault
+      .getAllLoadedFiles()
+      .filter((f: TAbstractFile): f is TFolder => f instanceof TFolder)
+      .map((f: TFolder) => f.path);
   }
 
-  getItems(): string[] {
-    return this.suggestions;
+  getSuggestions(input: string): string[] {
+    return this.folders.filter((folder) =>
+      folder.toLowerCase().contains(input.toLowerCase())
+    );
   }
 
-  getItemText(item: string): string {
-    return item;
+  renderSuggestion(folder: string, el: HTMLElement): void {
+    el.setText(folder);
   }
 
-  onChooseItem(item: string): void {
-    // We assume the input is still focused when this is called
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLInputElement) {
-      activeElement.value = item;
-      activeElement.dispatchEvent(new Event("input"));
-    }
+  selectSuggestion(folder: string): void {
+    this.inputEl.value = folder;
+    this.inputEl.trigger("input"); // Notify Obsidian that input changed
   }
 }
-

@@ -1,6 +1,7 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, TAbstractFile, TFolder} from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import { DateTimestampFormat } from "./utils/date-timestamp";
+import { FolderSuggest } from "./utils/AutoCompleteFolder";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
@@ -66,18 +67,38 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 				})
 		);
 ////============ CREATE NEW NOTE BASED ON TEMPLATE ==================================================
+	// new Setting(containerEl)
+    //   .setName("Template Filename")
+    //   .setDesc("New note content created based on the template")
+    //   .addText(text =>
+    //     text
+    //       .setPlaceholder("youtube_template.md")
+    //       .setValue(this.plugin.settings.templateFile)
+    //       .onChange(async (value) => {
+    //         this.plugin.settings.templateFile = value;
+    //         await this.plugin.saveSettings();
+    //       })
+    //   );
 	new Setting(containerEl)
-      .setName("Template Filename")
-      .setDesc("New note content created based on the template")
-      .addText(text =>
+      .setName("Template folder")
+      .setDesc("Select a folder path where your templates are stored.")
+      .addText((text) => {
         text
-          .setPlaceholder("youtube_template.md")
-          .setValue(this.plugin.settings.templateFile)
+          .setPlaceholder("Templates/")
+          .setValue(this.plugin.settings.templateFolder)
           .onChange(async (value) => {
-            this.plugin.settings.templateFile = value;
+            this.plugin.settings.templateFolder = value;
             await this.plugin.saveSettings();
-          })
-      );
+          });
+
+        // ✨ Initialize AutoCompleteFolder
+        const folderSuggestions = this.app.vault
+          .getAllLoadedFiles()
+          .filter((f: TAbstractFile) => f instanceof TFolder && f.path !== "/")
+          .map((f) => f.path);
+
+        new FolderSuggest(this.app, text.inputEl);
+      });
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)
       .setName("Add Date-Timestamp")
