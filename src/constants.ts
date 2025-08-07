@@ -33,11 +33,12 @@ export const CLASS_PLAY_BUTTON = "yt-play-btn";
 export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
-export const CMD_OPEN_ANNOTATOR = "open-youtube-annotator";
-export const CMD_OPEN_PLAYER = "open-youtube-player";
-export const CMD_OPEN_SPLIT_VIEW = "open-youtube-split-view";
-export const CMD_LABEL_ANNOTATOR = "📝 Open YouTube Annotator";
-export const CMD_LABEL_PLAYER = "▶️ Open YouTube Player";
+// export const CMD_OPEN_ANNOTATOR = "open-youtube-annotator";
+// export const CMD_OPEN_PLAYER = "open-youtube-player";
+// export const CMD_OPEN_SPLIT_VIEW = "open-youtube-split-view";
+// export const CMD_LABEL_ANNOTATOR = "Open YouTube Annotator";
+// export const CMD_LABEL_PLAYER = "Open YouTube Player";
+ export const CMD_YTVIDEO_TIMESTAMP = "capture-video-timestamp";
 
 // Setting keys for persistence
 export const SETTING_LAST_USED_URL = "last-used-url";
