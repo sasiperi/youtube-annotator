@@ -1,10 +1,6 @@
 /*
 constants.ts file as the single source of truth for all fixed strings, IDs, keys, class names, default numbers, and any literal values that get reused across multiple files.
 Why? Because:
-It avoids “magic strings” scattered everywhere.
-If you want to rename a command ID, or tweak a CSS class name, you do it once here, and every import reflects the change.
-It reduces typos and inconsistencies.
-Makes your code more readable and maintainable.
 Any other constants you want to reuse globally
 */
 // src/constants/constants.ts

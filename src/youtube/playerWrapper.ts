@@ -24,13 +24,13 @@ export class PlayerWrapper {
 
     this.player.addEventListener("onReady", () => {
       this.isReady = true;
-      console.log("✅ Player ready (PlayerWrapper)");
+      //console.log("Player ready (PlayerWrapper)");
       this.onReadyCallback?.();
     });
 
     this.player.addEventListener("onStateChange", (event: YT.OnStateChangeEvent) => {
       this.lastState = event.data;
-      console.log("🎬 State changed to:", event.data);
+      //console.log("State changed to:", event.data);
       this.onStateChangeCallback?.(event.data);
     });
   }

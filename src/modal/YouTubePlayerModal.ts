@@ -117,16 +117,16 @@ export class YouTubePlayerModal extends Modal {
     this.addOutsideClickPrevention();
     this.updateBackdrop();
     
-    // ✅ YouTube player initialization
+    // Initiate the YouTube player
     const ytPlayer = new YT.Player(playerContainer.id, {
       videoId: this.videoId,
       events: {
         onReady: () => {
           this.playerWrapper = new PlayerWrapper(ytPlayer);
-          console.log("✅ PlayerWrapper initialized");
+          //console.log("PlayerWrapper initialized");
         },
         onStateChange: (event) => {
-          console.log("📺 Player state changed:", event.data);
+          //console.log("Player state changed:", event.data);
         }
       }
     });

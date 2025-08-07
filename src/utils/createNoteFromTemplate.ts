@@ -4,7 +4,7 @@ import { YoutubeAnnotatorSettings } from "../settings";
 import { generateNoteFilename } from "../utils/generateFilenames";
 import { generateDateTimestamp } from "./date-timestamp";
 
-console.log("🛠️ createNoteFromTemplate called");
+//console.log("createNoteFromTemplate called");
 
 export async function createNoteFromTemplate(
   app: App,
@@ -20,7 +20,7 @@ export async function createNoteFromTemplate(
   
 
   
-  console.log("This is the template path", templatePath);
+  //console.log("This is the template path", templatePath);
 
   let content = "";
 
@@ -29,12 +29,12 @@ export async function createNoteFromTemplate(
     if (templateFile instanceof TFile) {
       content = await app.vault.read(templateFile);
     } else {
-      new Notice("⚠️ Template file not found. Please check the path in settings.");
+      new Notice("Template file not found. Please check the path in settings.");
       return;
     }
   } catch (err) {
-    //console.warn("⚠️ Error reading template file:", err);
-    new Notice("⚠️ Could not read template file. See console for details.");
+    //console.warn("Error reading template file:", err);
+    new Notice("Could not read template file. See console for details.");
     return;
   }
 
@@ -46,8 +46,7 @@ export async function createNoteFromTemplate(
     .replace(/{{originalUrl}}/g, originalUrl)  
     .replace(/{{filename}}/g, filename)
     .replace(/{{date}}/g, formattedDate);
-  
-    console.log("📄 Final note content:\n", content);
+    //console.log("Final note content:\n", content);
 
   // Create the note
   try {
@@ -62,7 +61,7 @@ export async function createNoteFromTemplate(
       new Notice("✅ Note created but could not open it.");
     }
   } catch (err) {
-    console.error("❌ Failed to create note:", err);
-    new Notice("❌ Failed to create note. See console for details.");
+    //console.error("Failed to create note:", err);
+    new Notice("Failed to create note. See console for details.");
   }
 }

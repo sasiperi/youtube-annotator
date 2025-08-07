@@ -22,7 +22,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
 
   public async activateView(videoId?: string) {
-    console.log("🔥 Activating view with videoId:", videoId);
+    //console.log("Activating view with videoId:", videoId);
 
     const leaf = this.app.workspace.getRightLeaf(false);
     if (leaf) {
@@ -32,11 +32,11 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
         active: true,
       });
 
-      console.log("📤 Setting view state:", {
+      /*console.log("Setting view state:", {
         type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
         state: { videoId },
         active: true,
-      });
+      });*/
 
       this.app.workspace.revealLeaf(leaf);
     }
@@ -113,7 +113,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
 
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
-    console.log(`[${PLUGIN_ID}] initialized`);
+    //console.log(`[${PLUGIN_ID}] initialized`);
   }
 
   async openModal() {
@@ -125,7 +125,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
       videoAuthor: string,
       videoTitle: string
     ) => {
-      console.log("✅ Video ID from modal:", videoId);
+      //console.log("Video ID from modal:", videoId);
 
       // Step 1: Create note
       try {
@@ -137,9 +137,9 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
           videoId,
           originalUrl
         );
-        console.log("📝 Note created successfully");
+        //console.log("Note created successfully");
       } catch (err) {
-        console.error("❌ Failed to create note:", err);
+        //console.error("Failed to create note:", err);
         new Notice("Note creation failed. Check template path or folder.");
       }
 

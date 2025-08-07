@@ -35,7 +35,7 @@ export class YouTubeView extends ItemView {
     const viewState = this.leaf.getViewState();
     const stateVideoId = viewState?.state?.videoId;
     this.videoId = typeof stateVideoId === "string" ? stateVideoId : null;
-    console.log("📥 onLoad: videoId =", this.videoId);
+    //console.log("onLoad: videoId =", this.videoId);
 
     if (!this.videoId) {
       const file = this.app.workspace.getActiveFile();
@@ -45,9 +45,9 @@ export class YouTubeView extends ItemView {
         if (yamlMatch) {
           const yaml = parseYaml(yamlMatch[1]);
           const url = yaml?.originalUrl;
-          console.log("📄 Found YouTube URL in YAML:", url);
-          //const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-          const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/);
+          //console.log("Found YouTube URL in YAML:", url);
+          //const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/); 
+          const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/); // This is what used for reloading Obsidian url
           if (match) {
             this.videoId = match[1];
             
@@ -59,7 +59,7 @@ export class YouTubeView extends ItemView {
     if (this.videoId) {
       await this.renderPlayer();
     } else {
-      new Notice("❌ No videoId passed to YouTubeView.");
+      new Notice("No videoId passed to YouTubeView.");
     }
   }
 
@@ -67,11 +67,11 @@ export class YouTubeView extends ItemView {
     const newVideoId = state?.videoId ?? null;
 
     if (!newVideoId || newVideoId === this.videoId) {
-      console.log("⚠️ setState: No new videoId or unchanged");
+      //console.log("setState: No new videoId or unchanged");
       return;
     }
 
-    console.log("🔁 setState: switching to new videoId =", newVideoId);
+    //console.log("setState: switching to new videoId =", newVideoId);
     this.videoId = newVideoId;
     await this.renderPlayer();
   }
@@ -89,11 +89,11 @@ export class YouTubeView extends ItemView {
     container.empty();
 
     if (!this.videoId) {
-      new Notice("❌ No videoId provided");
+      new Notice("No videoId provided");
       return;
     }
 
-    console.log("📺 Rendering player for videoId:", this.videoId);
+    //console.log("Rendering player for videoId:", this.videoId);
 
     const playerContainer = container.createDiv({ cls: "youtube-video-container" });
     playerContainer.id = "yt-player";
@@ -120,7 +120,7 @@ export class YouTubeView extends ItemView {
     closeBtn.onclick = () => this.leaf.detach();
 
     await loadYouTubeIframeAPI();
-    console.log("📥 Loading YouTube Iframe API...");
+    console.log("Loading YouTube Iframe API...");
 
     await createYouTubePlayer(
       "yt-player",
@@ -153,14 +153,14 @@ export class YouTubeView extends ItemView {
         if (meta) {
           this.videoTitle = meta.title;
           this.videoAuthor = meta.author;
-          console.log("🎬 Title:", this.videoTitle);
-          console.log("📡 Author:", this.videoAuthor);
+          //console.log("Title:", this.videoTitle);
+          //console.log("Author:", this.videoAuthor);
         }
 
-        console.log("✅ PlayerWrapper created and timestamp button enabled");
+        //console.log("PlayerWrapper created and timestamp button enabled");
       },
       (state) => {
-        console.log("▶️ Player state changed:", state);
+      //  console.log("Player state changed:", state);
       }
     );
   this.registerDomEvent(this.containerEl, "click", (e: MouseEvent) => {
