@@ -1,5 +1,4 @@
 // main.ts starts here 
-// main.ts
 import { Plugin, App, WorkspaceLeaf, Notice, parseYaml } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
@@ -166,7 +165,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
       .getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)
       .forEach((leaf) => leaf.detach());
 
-    console.log(`[${PLUGIN_ID}] unloaded`);
+    //console.log(`[${PLUGIN_ID}] unloaded`);
   }
 }
 

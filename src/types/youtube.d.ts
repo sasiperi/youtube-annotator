@@ -1,6 +1,6 @@
-// src/types/youtube.d.ts
+// src/types/youtube.d.ts 
 
-export {}; // makes this a module
+export {}; 
 
 declare global {
   namespace YT {

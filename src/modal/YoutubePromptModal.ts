@@ -1,4 +1,4 @@
-// YoutubePromptModal starts here
+// /src/YoutubePromptModal starts here
 import { App, Modal, Notice } from "obsidian";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 
@@ -36,18 +36,15 @@ export class YoutubePromptModal extends Modal {
       }
     });
 
-    // Handle OK button
-    // contentEl.createEl("button", { text: "OK" }).addEventListener("click", () => {
-    //   this.processInput(inputEl.value);
-    // });
+    
     contentEl.createEl("button", { text: "OK" }).addEventListener("click", async () => {
-  const input = inputEl.value.trim();
-  const videoId = this.extractVideoId(input);
+      const input = inputEl.value.trim();
+      const videoId = this.extractVideoId(input);
 
-  if (!videoId) {
-    new Notice("Invalid YouTube URL");
-    return;
-  }
+      if (!videoId) {
+        new Notice("Invalid YouTube URL");
+        return;
+      }
 
   await loadYouTubeIframeAPI();
 
@@ -65,11 +62,11 @@ export class YoutubePromptModal extends Modal {
 
         this.onSubmit(videoId, input, videoAuthor, videoTitle);
         this.close();
+        }
       }
-    }
+    });
   });
-});
-  }
+}
 
   private processInput(rawInput: string) {
     const input = rawInput.trim();
