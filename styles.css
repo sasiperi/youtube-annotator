@@ -38,4 +38,11 @@ If your plugin does not need CSS, delete this file.
   padding: 4px 10px;
   cursor: pointer;
 }
+.yt-speed-btn {
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+}
 /* CSS Ends here
