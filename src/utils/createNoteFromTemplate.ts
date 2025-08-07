@@ -16,10 +16,6 @@ export async function createNoteFromTemplate(
   const templatePath = normalizePath(settings.templateFile);
   const formattedDate = generateDateTimestamp(settings.timestampFormat);
   
-
-  
-  //console.log("This is the template path", templatePath);
-
   let content = "";
 
   try {

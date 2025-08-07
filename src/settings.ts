@@ -1,12 +1,13 @@
-import { App, PluginSettingTab, Setting, TAbstractFile, TFolder} from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, TAbstractFile, TFolder} from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import { DateTimestampFormat } from "./utils/date-timestamp";
 import { FolderSuggest } from "./utils/FolderSuggest";
 import { FileSuggest } from "./utils/FileSuggest";
+import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
-	useDefaultFolders: boolean;
+	useDefaultStructure: boolean;
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
@@ -23,7 +24,7 @@ export interface YoutubeAnnotatorSettings {
 
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
-	useDefaultFolders: true,
+	useDefaultStructure: false,
 	enableTranscript: false,
 	defaultPlaybackSpeed: 1.0,
 	lastUsedUrl: "",
@@ -55,18 +56,23 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
     containerEl.empty();
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE =========================================
-	new Setting(containerEl)
+		new Setting(containerEl)
 		.setName("Use default folder structure")
-		.setDesc("Automatically use recommended folders for notes, templates, screenshots, and media.")
+		.setDesc("Creates folders and template file under 'YouTube-Annotator/'. Recommended for new users.")
 		.addToggle((toggle) =>
 			toggle
-			.setValue(this.plugin.settings.useDefaultFolders)
+			.setValue(this.plugin.settings.useDefaultStructure ?? false)
 			.onChange(async (value) => {
-				this.plugin.settings.useDefaultFolders = value;
+				this.plugin.settings.useDefaultStructure = value;
 				await this.plugin.saveSettings();
+
+				if (value) {
+				await initializeDefaultStructure(this.app, this.plugin);
+				new Notice ( "Default folder structure created.");
+				}
 			})
 		);
-	
+
 ////============ FUTURE FEATURE ==================================================
 
 	new Setting(containerEl)
