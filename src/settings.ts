@@ -7,9 +7,9 @@ export interface YoutubeAnnotatorSettings {
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
-	templateFolder: string;       // e.g., "templates"
+	templateFolder: string;       
 	templateFile: string;     // e.g., "youtube_template.md"
-	filenamePrefix: string;       // e.g., "YT_"
+	filenamePrefix: string;   
 	notesFolder: string;
 	timestampFormat: DateTimestampFormat;
 }
@@ -39,7 +39,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
     containerEl.empty();
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
-
+////============ FUTURE FEATURE ==================================================
 	new Setting(containerEl)
 		.setName("Enable Transcript")
 		.setDesc("Future feature placeholder - Show transcript automatically if available")
@@ -51,7 +51,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 		);
-
+////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
 		.setName("Default Playback Speed")
 		.setDesc("Set the default playback speed for your YouTube videos")
@@ -65,7 +65,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 		);
-
+////============ CREATE NEW NOTE BASED ON TEMPLATE ==================================================
 	new Setting(containerEl)
       .setName("Template Filename")
       .setDesc("New note content created based on the template")
@@ -78,7 +78,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
-	
+////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)
       .setName("Add Date-Timestamp")
       .setDesc("Date timestamp added at the end of new note creation")
@@ -98,5 +98,25 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			await this.plugin.saveSettings();
           })
       );
+
+//============ BUY ME COFFEE ==================================================
+		containerEl.createEl("hr");
+		containerEl.createEl("div", { text: "☕ Like this plugin? Support my work!" });
+
+		const coffeeLink = containerEl.createEl("a", {
+		text: "Buy Me a ☕ Coffee",
+		href: "https://github.com/sponsors/sasiperi?frequency=one-time",
+		});
+		coffeeLink.setAttribute("target", "_blank");
+		coffeeLink.setAttribute("style", "color: var(--text-accent); font-weight: bold;");
+
+		containerEl.createEl("hr");
+		containerEl.createEl("div", { text: "" });
+		const companyLink = containerEl.createEl("a", {
+		text: "Visit my Website",
+		href: "https://fourthquest.com/",
+		});
+		companyLink.setAttribute("target", "_blank");
+		companyLink.setAttribute("style", "color: var(--text-accent); font-weight: bold;");
 	}
 }

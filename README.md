@@ -42,7 +42,8 @@ Annotate YouTube videos directly in Obsidian! This plugin lets you load a YouTub
 - In Obsidian, go to Settings -> Community plugins.
 - Make sure "Restricted mode" is off.
  - Click Browse and search for "youtube-annotator".
-- Click Install, once it's finished, click Enable. 
+- Click Install, once it's finished, click Enable.
+- Full features video COMMING SOON 
 
 ---
 ##  Settings Page
