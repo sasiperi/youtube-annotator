@@ -10,7 +10,7 @@ import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
   currentSpeedIndex = 0;
-  speeds = [1, 1.5, 2];
+  speeds = [1, 1.25, 1.5, 1.75, 2];
   videoAuthor: string | null = null;
   videoTitle: string | null = null;
   videoId: string | null = null;
@@ -100,18 +100,38 @@ export class YouTubeView extends ItemView {
 
     const tools = container.createDiv({ cls: "yt-toolbar" });
 
+    // copy timestamp to clipboard 
     const timestampBtn = tools.createEl("button", {
       text: "🕒",
       attr: { title: "Copy timestamp", disabled: "true" },
     });
 
+    // Take screenshot and append it to the note location
     const screenshotBtn = tools.createEl("button", {
       text: "📷",
       attr: { title: "Capture screenshot" },
     });
     screenshotBtn.onclick = () => {
       new Notice("📸 Screenshot logic not implemented yet");
+        };
+
+        const speedBtn = tools.createEl("button", {
+          text: `${this.speeds[this.currentSpeedIndex]}x`,
+          attr: { title: "Change playback speed" },
+          cls: "yt-speed-btn", // CSS class has details
+        });
+
+        speedBtn.onclick = () => {
+      this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
+      const newSpeed = this.speeds[this.currentSpeedIndex];
+
+      this.playerWrapper?.setPlaybackRate(newSpeed);
+      speedBtn.setText(`${newSpeed}x`);
+      //new Notice(`⏩ Speed set to ${newSpeed}x`);
     };
+
+    tools.appendChild(speedBtn);
+
 
     const closeBtn = tools.createEl("button", {
       text: "❌",

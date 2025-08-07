@@ -45,14 +45,20 @@ export class PlayerWrapper {
   
   togglePlayPause(): string {
   const state = this.player.getPlayerState();
-  if (state === YT.PlayerState.PLAYING) {
-    this.pause();
-    return "paused";
-  } else {
-    this.play();
-    return "playing";
+    if (state === YT.PlayerState.PLAYING) {
+      this.pause();
+      return "paused";
+    } else {
+      this.play();
+      return "playing";
+    }
   }
-}
+
+  setPlaybackRate(speed: number): void {
+    if (this.player && this.player.setPlaybackRate) {
+      this.player.setPlaybackRate(speed);
+    }
+  }
 
   stop() {
     this.player.stopVideo();
