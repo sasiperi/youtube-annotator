@@ -1,7 +1,8 @@
 import { App, PluginSettingTab, Setting, TAbstractFile, TFolder} from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import { DateTimestampFormat } from "./utils/date-timestamp";
-import { FolderSuggest } from "./utils/AutoCompleteFolder";
+import { FolderSuggest } from "./utils/FolderSuggest";
+import { FileSuggest } from "./utils/FileSuggest";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
@@ -66,39 +67,39 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 		);
-////============ CREATE NEW NOTE BASED ON TEMPLATE ==================================================
-	// new Setting(containerEl)
-    //   .setName("Template Filename")
-    //   .setDesc("New note content created based on the template")
-    //   .addText(text =>
-    //     text
-    //       .setPlaceholder("youtube_template.md")
-    //       .setValue(this.plugin.settings.templateFile)
-    //       .onChange(async (value) => {
-    //         this.plugin.settings.templateFile = value;
-    //         await this.plugin.saveSettings();
-    //       })
-    //   );
+////============ SUGGEST FOLDER PATH ==================================================
 	new Setting(containerEl)
-      .setName("Template folder")
-      .setDesc("Select a folder path where your templates are stored.")
-      .addText((text) => {
-        text
-          .setPlaceholder("Templates/")
-          .setValue(this.plugin.settings.templateFolder)
-          .onChange(async (value) => {
-            this.plugin.settings.templateFolder = value;
-            await this.plugin.saveSettings();
-          });
+		.setName("Template Folder")
+		.setDesc("Folder where your note templates are stored")
+		.addText((text) => {
+			text
+			.setPlaceholder("e.g. Templates")
+			.setValue(this.plugin.settings.templateFolder)
+			.onChange(async (value) => {
+				this.plugin.settings.templateFolder = value;
+				await this.plugin.saveSettings();
+			});
 
-        // ✨ Initialize AutoCompleteFolder
-        const folderSuggestions = this.app.vault
-          .getAllLoadedFiles()
-          .filter((f: TAbstractFile) => f instanceof TFolder && f.path !== "/")
-          .map((f) => f.path);
+			// 🧠 Enable folder suggestion
+			new FolderSuggest(this.app, text.inputEl);
+		});
+////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION ==========================================
+	new Setting(containerEl)
+		.setName("Template File Path")
+		.setDesc("Select the default note template (.md)")
+		.addText((text) => {
+			text
+			.setPlaceholder("Templates/youtube_template.md")
+			.setValue(this.plugin.settings.templateFile)
+			.onChange(async (value) => {
+				this.plugin.settings.templateFile = value;
+				await this.plugin.saveSettings();
+			});
 
-        new FolderSuggest(this.app, text.inputEl);
-      });
+			new FileSuggest(this.app, text.inputEl);
+		});
+
+
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)
       .setName("Add Date-Timestamp")
@@ -132,7 +133,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		coffeeLink.setAttribute("style", "color: var(--text-accent); font-weight: bold;");
 
 		containerEl.createEl("hr");
-		containerEl.createEl("div", { text: "" });
+		containerEl.createEl("div", { text: "Have improvement suggestions? Contact Us through our webpage" });
 		const companyLink = containerEl.createEl("a", {
 		text: "Visit my Website",
 		href: "https://fourthquest.com/",
