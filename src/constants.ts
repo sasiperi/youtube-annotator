@@ -1,7 +1,5 @@
 /*
-constants.ts file as the single source of truth for all fixed strings, IDs, keys, class names, default numbers, and any literal values that get reused across multiple files.
-Why? Because:
-Any other constants you want to reuse globally
+constants.ts define Any constants you want to reuse globally
 */
 // src/constants/constants.ts
 export const VIEW_STATE_KEY = "youtube-view-state"; // if you save last open view or tab
@@ -29,11 +27,6 @@ export const CLASS_PLAY_BUTTON = "yt-play-btn";
 export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
-// export const CMD_OPEN_ANNOTATOR = "open-youtube-annotator";
-// export const CMD_OPEN_PLAYER = "open-youtube-player";
-// export const CMD_OPEN_SPLIT_VIEW = "open-youtube-split-view";
-// export const CMD_LABEL_ANNOTATOR = "Open YouTube Annotator";
-// export const CMD_LABEL_PLAYER = "Open YouTube Player";
  export const CMD_YTVIDEO_TIMESTAMP = "capture-video-timestamp";
 
 // Setting keys for persistence

@@ -6,27 +6,40 @@ import { FileSuggest } from "./utils/FileSuggest";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
+	useDefaultFolders: boolean;
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
-	templateFolder: string;       
-	templateFile: string;     // e.g., "youtube_template.md"
-	filenamePrefix: string;   
-	notesFolder: string;
+	notesFolder: string;              	
+	templateFolder: string;
+	screenshotFolder: string;   
+	mediaFolder: string;
+	templateFile: string;
+	filenamePrefix: string;
 	timestampFormat: DateTimestampFormat;
+	devMode: Boolean; 
 }
+
 
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
-	enableTranscript: true,
+	useDefaultFolders: true,
+	enableTranscript: false,
 	defaultPlaybackSpeed: 1.0,
 	lastUsedUrl: "",
-	templateFolder: "",       // e.g., "templates"
-	templateFile: "/Templates/youtube_template.md",     // e.g., "youtube_template.md"
-	filenamePrefix: "YT_",       // e.g., "YT_"
-	notesFolder: "YouTube_Notes",
-	timestampFormat: DateTimestampFormat.Compact, 
+
+	notesFolder: "YouTube-Annotator/notes",              	
+	templateFolder: "YouTube-Annotator/templates",      
+	screenshotFolder: "YouTube-Annotator/screenshots",   
+	mediaFolder: "YouTube-Annotator/media",              
+	
+	templateFile: "YouTube-Annotator/templates/youtube_template.md",
+	filenamePrefix: "YT_",
+	timestampFormat: DateTimestampFormat.Compact,        
+	
+	devMode: false,                                      
 };
+
 
 // Settings tab UI for Obsidian’s plugin settings panel
 export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
@@ -41,7 +54,21 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
     containerEl.empty();
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
+////============ USE DEFAULT FOLDER STRUCTURE =========================================
+	new Setting(containerEl)
+		.setName("Use default folder structure")
+		.setDesc("Automatically use recommended folders for notes, templates, screenshots, and media.")
+		.addToggle((toggle) =>
+			toggle
+			.setValue(this.plugin.settings.useDefaultFolders)
+			.onChange(async (value) => {
+				this.plugin.settings.useDefaultFolders = value;
+				await this.plugin.saveSettings();
+			})
+		);
+	
 ////============ FUTURE FEATURE ==================================================
+
 	new Setting(containerEl)
 		.setName("Enable Transcript")
 		.setDesc("Future feature placeholder - Show transcript automatically if available")

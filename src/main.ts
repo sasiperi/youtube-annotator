@@ -1,5 +1,5 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   VIEW_TYPE_YOUTUBE_PLAYER,
