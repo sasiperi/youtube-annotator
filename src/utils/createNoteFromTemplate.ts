@@ -41,7 +41,7 @@ export async function createNoteFromTemplate(
     .replace(/{{filename}}/g, filename)
     .replace(/{{date}}/g, formattedDate);
 
-  // Create the note
+  
   try {
     // Create the note
     await app.vault.create(newNotePath, content);

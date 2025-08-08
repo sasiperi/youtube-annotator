@@ -2,8 +2,8 @@
 import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
-  VIEW_TYPE_YOUTUBE_PLAYER,
-  VIEW_TYPE_YOUTUBE_SPLIT,
+  //VIEW_TYPE_YOUTUBE_PLAYER,
+  //VIEW_TYPE_YOUTUBE_SPLIT,
   PLUGIN_ID,
   SAVED_TIME_LINK,
 } from "./constants";
@@ -110,6 +110,51 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   });
 });
 
+this.registerDomEvent(this.app.workspace.containerEl, "click", (event: MouseEvent) => {
+  // Respect modifier keys so users can still open links normally if they want
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+  // Find the nearest <a> (Live Preview often wraps things)
+  let target = event.target as HTMLElement | null;
+  const anchor = (target?.closest?.("a") ?? null) as HTMLAnchorElement | null;
+  if (!anchor) return;
+
+  const href = anchor.getAttribute("href");
+  const schemePrefix = `${SAVED_TIME_LINK}://`;
+  if (!href || !href.startsWith(schemePrefix)) return;
+
+  // Intercept Obsidian's external link handling
+  event.preventDefault();
+  event.stopPropagation();
+
+  const secondsStr = href.slice(schemePrefix.length);
+  const seconds = Number(secondsStr);
+  if (!Number.isFinite(seconds)) {
+    new Notice("Invalid timestamp");
+    return;
+  }
+
+  // Find the existing YouTube annotator view
+  const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
+  const view = leaf?.view as YouTubeView | undefined;
+
+  if (view?.playerWrapper?.isPlayerReady()) {
+    view.playerWrapper.seekTo(seconds, true);
+    new Notice(`⏩ Jumped to ${formatHMS(seconds)}`);
+  } else {
+    new Notice("⏳ Player not ready or not open.");
+  }
+});
+
+// Optional tiny helper for nicer notices
+function formatHMS(total: number): string {
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
 
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
