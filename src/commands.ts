@@ -1,18 +1,14 @@
 import { App, Editor, MarkdownView, Notice } from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import {
-  // CMD_OPEN_ANNOTATOR,
-  // CMD_OPEN_PLAYER,
-  // CMD_OPEN_SPLIT_VIEW,
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   SAVED_TIME_LINK,
 } from "./constants";
 import {YouTubeView} from "./views/YouTubeView"
 
-
-
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
 
+//  =================== COMMAND TO CAPTURE VIDEO TIME TO CLIPBOARD ==========================
   plugin.addCommand({
   id: "capture-video-timestamp",
   name: "Copy YT-timestamp to clipboard",
@@ -41,7 +37,7 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
   },
 });
 
-// 
+//  =================== COMMAND TO CAPTURE VIDEO TIME & INSERT IN CURRENT NOTE ==========================
 plugin.addCommand({
     id: "insert-video-timestamp",
     name: "Insert YT-timestamp at cursor",
@@ -76,7 +72,7 @@ plugin.addCommand({
     },
   });
 
-  // Future command # 1
+  //  =================== FUTURE COMMAND #1 ==========================
   
-  // Future command # 2 etc
+  //  =================== FUTURE COMMAND #2 ==========================
 }

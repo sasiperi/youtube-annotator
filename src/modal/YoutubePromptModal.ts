@@ -48,7 +48,7 @@ export class YoutubePromptModal extends Modal {
 
   await loadYouTubeIframeAPI();
 
-  // ⚡ Create a temporary player to extract metadata
+  // Create a temporary player to extract metadata
   const tempDiv = contentEl.createDiv();
   const tempPlayer = new YT.Player(tempDiv, {
     videoId,
@@ -77,7 +77,6 @@ export class YoutubePromptModal extends Modal {
       this.videoUrl = `https://youtu.be/${videoId}`;
       this.watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
       this.embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      //this.onSubmit(videoId, input, this.videoAuthor ?? "", this.videoTitle ?? "",); // ✅ triggers note creation and view
       this.onSubmit(
         videoId ?? "",               // string
         input ?? "",                 // originalUrl

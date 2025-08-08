@@ -32,11 +32,11 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
         active: true,
       });
 
-      /*console.log("Setting view state:", {
-        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-        state: { videoId },
-        active: true,
-      });*/
+    /*console.log("Setting view state:", {
+      type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+      state: { videoId },
+      active: true,
+    });*/
 
       this.app.workspace.revealLeaf(leaf);
     }
@@ -102,9 +102,9 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
 
       if (view?.playerWrapper?.isPlayerReady()) {
         view.playerWrapper.seekTo(seconds, true);
-        new Notice(`⏩ Jumped to ${seconds} sec`);
+        new Notice(`To ${seconds} sec mark`);
       } else {
-        new Notice("⏳ Player not ready or not open.");
+        new Notice("Not ready - Play & try again");
       }
     });
   });

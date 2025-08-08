@@ -2,7 +2,7 @@
 constants.ts define Any constants you want to reuse globally
 */
 // src/constants/constants.ts
-export const VIEW_STATE_KEY = "youtube-view-state"; // if you save last open view or tab
+export const VIEW_STATE_KEY = "youtube-view-state"; // Save last open view or tab
 
 //  icons consistently in ribbon or status bar:
 export const ICON_YOUTUBE = "play-circle";
@@ -29,7 +29,7 @@ export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
  export const CMD_YTVIDEO_TIMESTAMP = "capture-video-timestamp";
- export const SAVED_TIME_LINK = "go2saved_timestamp"; // jump to saved time-stamp 
+ export const SAVED_TIME_LINK = "go2saved_timestamp"; //  Jump to saved time-stamp 
 
 // Setting keys for persistence
 export const SETTING_LAST_USED_URL = "last-used-url";

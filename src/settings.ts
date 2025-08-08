@@ -113,9 +113,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 				this.plugin.settings.templateFolder = value;
 				await this.plugin.saveSettings();
 			});
-
-			// 🧠 Enable folder suggestion
-			new FolderSuggest(this.app, text.inputEl);
+		new FolderSuggest(this.app, text.inputEl);
 		});
 ////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION =======================================
 	new Setting(containerEl)
@@ -148,7 +146,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 				// If cleaning changed the input, update the field immediately
 				if (cleaned !== value) {
 				text.setValue(cleaned);
-				new Notice("⚠️ Invalid characters replaced with underscores.");
+				new Notice("Invalid characters replaced with underscores.");
 				}
 
 				this.plugin.settings.filenamePrefix = cleaned;

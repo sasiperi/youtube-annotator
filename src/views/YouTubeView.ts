@@ -195,11 +195,11 @@ export class YouTubeView extends ItemView {
   if (isNaN(seconds)) return;
 
   if (this.playerWrapper?.isPlayerReady()) {
-    // 💡 Always seek internally
+    // Always seek internally
     this.playerWrapper.seekTo(seconds, true);
-    new Notice(`⏩ Seeked to ${seconds} sec`);
+    new Notice(`Seeked to ${seconds} sec`);
   } else {
-    new Notice("⏳ Player not ready");
+    new Notice("Player not ready");
   }
 });
 
