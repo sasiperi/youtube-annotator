@@ -5,6 +5,7 @@ import { VIEW_TYPE_YOUTUBE_ANNOTATOR,SAVED_TIME_LINK } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
+import { formatHMS } from "../utils/Time"
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -154,17 +155,11 @@ export class YouTubeView extends ItemView {
             return;
           }
           const time = Math.floor(this.playerWrapper.getCurrentTime());
-          const hours = Math.floor(time / 3600);
-          const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
-          const secs = (time % 60).toString().padStart(2, "0");
-
-          const timestamp = hours > 0
-            ? `${hours.toString().padStart(2, "0")}:${mins}:${secs}`
-            : `${mins}:${secs}`;
-
+          const timestamp = formatHMS(time);
           const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
+
           navigator.clipboard.writeText(link);
-          new Notice(`📋 Copied timestamp: ${link}`);
+          new Notice(`Copied timestamp: ${link}`);
         };
 
   // Fetch metadata YouTube Meta data

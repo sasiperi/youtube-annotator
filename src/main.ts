@@ -17,6 +17,8 @@ import { registerCommands } from "./commands";
 import { YoutubePromptModal } from "./modal/YoutubePromptModal";
 import { createNoteFromTemplate } from "./utils/createNoteFromTemplate";
 import { generateDateTimestamp } from "./utils/date-timestamp";
+import { formatHMS } from "../src/utils/Time";
+
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
@@ -140,21 +142,11 @@ this.registerDomEvent(this.app.workspace.containerEl, "click", (event: MouseEven
 
   if (view?.playerWrapper?.isPlayerReady()) {
     view.playerWrapper.seekTo(seconds, true);
-    new Notice(`⏩ Jumped to ${formatHMS(seconds)}`);
+    new Notice(`To ${formatHMS(seconds)}`);
   } else {
-    new Notice("⏳ Player not ready or not open.");
+    new Notice("Player not ready or not open.");
   }
 });
-
-// Optional tiny helper for nicer notices
-function formatHMS(total: number): string {
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const mm = String(m).padStart(2, "0");
-  const ss = String(s).padStart(2, "0");
-  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
-}
 
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);
