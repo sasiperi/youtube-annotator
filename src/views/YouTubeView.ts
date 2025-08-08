@@ -1,7 +1,7 @@
 // src/views/YouTubeView.ts starts here
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
-import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
+import { VIEW_TYPE_YOUTUBE_ANNOTATOR,SAVED_TIME_LINK } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
@@ -162,7 +162,7 @@ export class YouTubeView extends ItemView {
             ? `${hours.toString().padStart(2, "0")}:${mins}:${secs}`
             : `${mins}:${secs}`;
 
-          const link = `[${timestamp}](ytseek://${time})`;
+          const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
           navigator.clipboard.writeText(link);
           new Notice(`📋 Copied timestamp: ${link}`);
         };
@@ -187,11 +187,11 @@ export class YouTubeView extends ItemView {
   if (target.tagName !== "A") return;
 
   const href = (target as HTMLAnchorElement).getAttribute("href");
-  if (!href?.startsWith("ytseek://")) return;
+  if (!href?.startsWith(`${SAVED_TIME_LINK}://`)) return;
 
   e.preventDefault();
 
-  const seconds = parseInt(href.replace("ytseek://", ""), 10);
+  const seconds = parseInt(href.replace(`${SAVED_TIME_LINK}://`, ""), 10);
   if (isNaN(seconds)) return;
 
   if (this.playerWrapper?.isPlayerReady()) {

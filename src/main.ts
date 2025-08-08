@@ -5,6 +5,7 @@ import {
   VIEW_TYPE_YOUTUBE_PLAYER,
   VIEW_TYPE_YOUTUBE_SPLIT,
   PLUGIN_ID,
+  SAVED_TIME_LINK,
 } from "./constants";
 import {
   YoutubeAnnotatorSettingTab,
@@ -80,14 +81,14 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     );
 
   this.registerMarkdownPostProcessor((el, ctx) => {
-  const anchors = el.querySelectorAll('a[href^="ytseek://"]');
+  const anchors = el.querySelectorAll(`a[href^="${SAVED_TIME_LINK}://"]`);
   anchors.forEach((anchor) => {
     anchor.addEventListener("click", async (e) => {
-      e.preventDefault();  // ⛔ Prevent default external link handling
-      e.stopPropagation(); // ⛔ Stop event from bubbling to Obsidian's external handler
+      e.preventDefault();  // Prevent default external link handling
+      e.stopPropagation(); // Stop event from bubbling to Obsidian's external handler
 
       const href = anchor.getAttribute("href");
-      const seconds = parseInt(href?.replace("ytseek://", "") ?? "", 10);
+      const seconds = parseInt(href?.replace(`${SAVED_TIME_LINK}://`, "") ?? "", 10);
       if (isNaN(seconds)) {
         new Notice("Invalid timestamp");
         return;

@@ -29,6 +29,7 @@ export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
  export const CMD_YTVIDEO_TIMESTAMP = "capture-video-timestamp";
+ export const SAVED_TIME_LINK = "go2saved_timestamp"; // jump to saved time-stamp 
 
 // Setting keys for persistence
 export const SETTING_LAST_USED_URL = "last-used-url";
@@ -41,6 +42,4 @@ export const FILE_PREFIX_ANNOTATION = "YT_ANNOT_";
 export const FILE_PREFIX_SCREENSHOT = "YT_SS_";
 
 export const MARKDOWN_TIMESTAMP_LINK = "[[{timestamp}]](#{{timestamp}})";
-
-
 

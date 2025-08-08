@@ -5,6 +5,7 @@ import {
   // CMD_OPEN_PLAYER,
   // CMD_OPEN_SPLIT_VIEW,
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
+  SAVED_TIME_LINK,
 } from "./constants";
 import {YouTubeView} from "./views/YouTubeView"
 
@@ -33,7 +34,7 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
     const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
     const secs = (time % 60).toString().padStart(2, "0");
     const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
-    const link = `[${timestamp}](ytseek://${time})`;
+    const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
 
     await navigator.clipboard.writeText(link);
     new Notice (`📋 Copied timestamp: ${link}`);
@@ -62,7 +63,7 @@ plugin.addCommand({
       const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
       const secs = (time % 60).toString().padStart(2, "0");
       const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
-      const link = `[${timestamp}](ytseek://${time})`;
+      const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
 
       const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
       if (editor) {
