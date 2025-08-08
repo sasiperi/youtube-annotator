@@ -56,22 +56,28 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
     containerEl.empty();
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE =========================================
-		new Setting(containerEl)
-		.setName("Use default folder structure")
-		.setDesc("Creates folders and template file under 'YouTube-Annotator/'. Recommended for new users.")
-		.addToggle((toggle) =>
-			toggle
-			.setValue(this.plugin.settings.useDefaultStructure ?? false)
+	new Setting(containerEl)
+		.setName("Filename Prefix")
+		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
+		.addText((text) => {
+			text
+			.setPlaceholder("YT_")
+			.setValue(this.plugin.settings.filenamePrefix || "YT_")
 			.onChange(async (value) => {
-				this.plugin.settings.useDefaultStructure = value;
-				await this.plugin.saveSettings();
+				// Trim spaces and replace invalid characters with underscores
+				const cleaned = value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
 
-				if (value) {
-				await initializeDefaultStructure(this.app, this.plugin);
-				new Notice ( "Default folder structure created.");
+				// If cleaning changed the input, update the field immediately
+				if (cleaned !== value) {
+				text.setValue(cleaned);
+				new Notice("⚠️ Invalid characters replaced with underscores.");
 				}
-			})
-		);
+
+				this.plugin.settings.filenamePrefix = cleaned;
+				await this.plugin.saveSettings();
+			});
+		});
+
 
 ////============ FUTURE FEATURE ==================================================
 
@@ -116,7 +122,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			// 🧠 Enable folder suggestion
 			new FolderSuggest(this.app, text.inputEl);
 		});
-////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION ==========================================
+////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION =======================================
 	new Setting(containerEl)
 		.setName("Template File Path")
 		.setDesc("Select the default note template (.md)")
@@ -132,6 +138,20 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			new FileSuggest(this.app, text.inputEl);
 		});
 
+////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
+
+	new Setting(containerEl)
+		.setName("Filename Prefix")
+		.setDesc("Prefix to add to new note filenames (e.g., YT_)")
+		.addText((text) => {
+			text
+			.setPlaceholder("YT_")
+			.setValue(this.plugin.settings.filenamePrefix || "YT_")
+			.onChange(async (value) => {
+				this.plugin.settings.filenamePrefix = value.trim();
+				await this.plugin.saveSettings();
+			});
+		});
 
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)

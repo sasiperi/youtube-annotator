@@ -1,5 +1,4 @@
 // src/views/YouTubeView.ts starts here
-// YouTubeView.ts
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
 import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
@@ -100,13 +99,13 @@ export class YouTubeView extends ItemView {
 
     const tools = container.createDiv({ cls: "yt-toolbar" });
 
-    // copy timestamp to clipboard 
+// copy timestamp to clipboard 
     const timestampBtn = tools.createEl("button", {
       text: "🕒",
       attr: { title: "Copy timestamp", disabled: "true" },
     });
 
-    // Take screenshot and append it to the note location
+// Take screenshot and append it to the note location
     const screenshotBtn = tools.createEl("button", {
       text: "📷",
       attr: { title: "Capture screenshot" },

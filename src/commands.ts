@@ -12,26 +12,6 @@ import {YouTubeView} from "./views/YouTubeView"
 
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
 
-
-  
-  // plugin.addCommand({
-  //   id: CMD_OPEN_ANNOTATOR,
-  //   name: "Open YouTube Annotator",
-  //   callback: () => plugin.activateView(),
-  // });
-
-  // plugin.addCommand({
-  //   id: CMD_OPEN_PLAYER,
-  //   name: "Open YouTube Player",
-  //   callback: () => plugin.activateView(),
-  // });
-
-  // plugin.addCommand({
-  //   id: CMD_OPEN_SPLIT_VIEW,
-  //   name: "Open YouTube Split View",
-  //   callback: () => plugin.activateView(),
-  // });
-
   plugin.addCommand({
   id: "capture-video-timestamp",
   name: "Copy YT-timestamp to clipboard",

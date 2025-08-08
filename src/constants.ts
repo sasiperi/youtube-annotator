@@ -24,6 +24,7 @@ export const DEFAULT_SPLIT_HEIGHT = 500;
 // CSS class names used in views and modals
 export const CLASS_TIMESTAMP = "yt-timestamp";
 export const CLASS_PLAY_BUTTON = "yt-play-btn";
+export const CLASS_SPEED_BUTTON = "yt-speed-btn"
 export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
