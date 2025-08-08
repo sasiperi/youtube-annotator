@@ -55,28 +55,23 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
     containerEl.empty();
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
-////============ USE DEFAULT FOLDER STRUCTURE =========================================
+////============ USE DEFAULT FOLDER STRUCTURE BOOLEAN =========================================
 	new Setting(containerEl)
-		.setName("Filename Prefix")
-		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
-		.addText((text) => {
-			text
-			.setPlaceholder("YT_")
-			.setValue(this.plugin.settings.filenamePrefix || "YT_")
-			.onChange(async (value) => {
-				// Trim spaces and replace invalid characters with underscores
-				const cleaned = value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+	.setName("Use default folder structure")
+	.setDesc("Creates folders and template file under 'YouTube-Annotator/'. Recommended for new users.")
+	.addToggle((toggle) =>
+		toggle
+		.setValue(this.plugin.settings.useDefaultStructure ?? false)
+		.onChange(async (value) => {
+			this.plugin.settings.useDefaultStructure = value;
+			await this.plugin.saveSettings();
 
-				// If cleaning changed the input, update the field immediately
-				if (cleaned !== value) {
-				text.setValue(cleaned);
-				new Notice("⚠️ Invalid characters replaced with underscores.");
-				}
-
-				this.plugin.settings.filenamePrefix = cleaned;
-				await this.plugin.saveSettings();
-			});
-		});
+			if (value) {
+			await initializeDefaultStructure(this.app, this.plugin);
+			new Notice ( "Default folder structure created.");
+			}
+		})
+	);
 
 
 ////============ FUTURE FEATURE ==================================================
@@ -139,19 +134,28 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		});
 
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
-
 	new Setting(containerEl)
 		.setName("Filename Prefix")
-		.setDesc("Prefix to add to new note filenames (e.g., YT_)")
+		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
 		.addText((text) => {
 			text
 			.setPlaceholder("YT_")
 			.setValue(this.plugin.settings.filenamePrefix || "YT_")
 			.onChange(async (value) => {
-				this.plugin.settings.filenamePrefix = value.trim();
+				// Trim spaces and replace invalid characters with underscores
+				const cleaned = value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+
+				// If cleaning changed the input, update the field immediately
+				if (cleaned !== value) {
+				text.setValue(cleaned);
+				new Notice("⚠️ Invalid characters replaced with underscores.");
+				}
+
+				this.plugin.settings.filenamePrefix = cleaned;
 				await this.plugin.saveSettings();
 			});
 		});
+
 
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)
