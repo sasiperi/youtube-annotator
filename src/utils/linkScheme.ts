@@ -2,5 +2,6 @@
 import type YoutubeAnnotatorPlugin from "../main";
 
 export function getLinkScheme(plugin: YoutubeAnnotatorPlugin): string {
-  return `go2_${plugin.settings.filenamePrefix || "ytseek"}`;
+  const prefix = plugin.settings.filenamePrefix?.trim() || "YT";
+  return `go2_${prefix}`;
 }
