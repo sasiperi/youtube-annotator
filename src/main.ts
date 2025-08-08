@@ -16,8 +16,6 @@ import { registerCommands } from "./commands";
 import { YoutubePromptModal } from "./modal/YoutubePromptModal";
 import { createNoteFromTemplate } from "./utils/createNoteFromTemplate";
 import { generateDateTimestamp } from "./utils/date-timestamp";
-import { getLinkScheme } from "./utils/linkScheme";
-
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
@@ -81,18 +79,17 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   })
     );
 
-  this.registerMarkdownPostProcessor((rootEl, context) => {
-  const scheme = `${getLinkScheme(this)}://`;
-  const anchors = rootEl.querySelectorAll(`a[href^="${scheme}"]`);
+  this.registerMarkdownPostProcessor((el, ctx) => {
+  const anchors = el.querySelectorAll('a[href^="ytseek://"]');
   anchors.forEach((anchor) => {
     anchor.addEventListener("click", async (e) => {
-      e.preventDefault();  // Prevent default external link handling
-      e.stopPropagation(); // Stop event from bubbling to Obsidian's external handler
+      e.preventDefault();  // ⛔ Prevent default external link handling
+      e.stopPropagation(); // ⛔ Stop event from bubbling to Obsidian's external handler
 
       const href = anchor.getAttribute("href");
-      const seconds = parseInt(href?.replace(scheme, "") ?? "", 10);
+      const seconds = parseInt(href?.replace("ytseek://", "") ?? "", 10);
       if (isNaN(seconds)) {
-        //new Notice("Invalid timestamp");
+        new Notice("Invalid timestamp");
         return;
       }
 
@@ -104,9 +101,9 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
 
       if (view?.playerWrapper?.isPlayerReady()) {
         view.playerWrapper.seekTo(seconds, true);
-        //new Notice(`⏩ Jumped to ${seconds} sec`);
+        new Notice(`⏩ Jumped to ${seconds} sec`);
       } else {
-        //new Notice("⏳ Player not ready or not open.");
+        new Notice("⏳ Player not ready or not open.");
       }
     });
   });

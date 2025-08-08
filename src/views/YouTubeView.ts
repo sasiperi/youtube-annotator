@@ -5,7 +5,6 @@ import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
-import { getLinkScheme } from "../utils/linkScheme";
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -162,8 +161,8 @@ export class YouTubeView extends ItemView {
           const timestamp = hours > 0
             ? `${hours.toString().padStart(2, "0")}:${mins}:${secs}`
             : `${mins}:${secs}`;
-          const scheme = getLinkScheme(this.plugin);
-          const link = `[${timestamp}](${scheme}://${time})`;  
+
+          const link = `[${timestamp}](ytseek://${time})`;
           navigator.clipboard.writeText(link);
           new Notice(`📋 Copied timestamp: ${link}`);
         };
@@ -186,15 +185,14 @@ export class YouTubeView extends ItemView {
   this.registerDomEvent(this.containerEl, "click", (e: MouseEvent) => {
   const target = e.target as HTMLElement;
   if (target.tagName !== "A") return;
-  
-  const scheme = getLinkScheme(this.plugin);
+
   const href = (target as HTMLAnchorElement).getAttribute("href");
-if (!href?.startsWith(`${scheme}://`)) return;
+  if (!href?.startsWith("ytseek://")) return;
 
   e.preventDefault();
 
-  const seconds = parseInt(href.replace(`${scheme}://`, ""), 10);
-if (isNaN(seconds)) return;
+  const seconds = parseInt(href.replace("ytseek://", ""), 10);
+  if (isNaN(seconds)) return;
 
   if (this.playerWrapper?.isPlayerReady()) {
     // 💡 Always seek internally

@@ -7,7 +7,8 @@ import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
 } from "./constants";
 import {YouTubeView} from "./views/YouTubeView"
-import { getLinkScheme } from "./utils/linkScheme";
+
+
 
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
 
@@ -32,8 +33,7 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
     const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
     const secs = (time % 60).toString().padStart(2, "0");
     const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
-    const scheme = getLinkScheme(plugin);
-    const link = `[${timestamp}](${scheme}://${time})`;
+    const link = `[${timestamp}](ytseek://${time})`;
 
     await navigator.clipboard.writeText(link);
     new Notice (`📋 Copied timestamp: ${link}`);
@@ -62,8 +62,7 @@ plugin.addCommand({
       const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
       const secs = (time % 60).toString().padStart(2, "0");
       const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
-      const scheme = getLinkScheme(plugin);
-      const link = `[${timestamp}](${scheme}://${time})`;
+      const link = `[${timestamp}](ytseek://${time})`;
 
       const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
       if (editor) {
