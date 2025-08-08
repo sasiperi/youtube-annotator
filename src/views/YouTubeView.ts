@@ -94,9 +94,11 @@ export class YouTubeView extends ItemView {
     }
 
     //console.log("Rendering player for videoId:", this.videoId);
-
-    const playerContainer = container.createDiv({ cls: "youtube-video-container" });
-    playerContainer.id = "yt-player";
+    const host = container.createDiv({ cls: "youtube-video-container" });
+    const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
+    const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
+    // const playerContainer = container.createDiv({ cls: "youtube-video-container" });
+    // playerContainer.id = "yt-player";
 
     const tools = container.createDiv({ cls: "yt-toolbar" });
 

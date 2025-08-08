@@ -1,48 +1,39 @@
-/*
-
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
 .youtube-video-container {
-  width: 100%;           
-  min-width: 100px;       
-  max-width: 100%;        
-  height: auto;           
-  display: flex;          
-  justify-content: center;
+  width: 100%;
+  margin: 0;
 }
 
-.youtube-video-container iframe {
-  width: 100%;               
-  max-width: 100%;           
-  height: auto;              
-  aspect-ratio: 4 / 3;      
-  border: 5px;              
+.youtube-video-wrapper {
+  width: 100%;
+  /* no fixed aspect ratio */
 }
 
+.youtube-video-wrapper > iframe,
+.youtube-video-wrapper > #yt-player {
+  display: block;
+  width: 100%;
+  /* Fill width, cap height at 400px, but allow shrinking on small screens */
+  height: min(300px, 50vh);
+  border: 0;
+}
 
+/* Toolbar */
 .yt-toolbar {
   display: flex;
-  gap: 20px;
-  margin-bottom: 10px;
-  padding: 10px;
-  justify-content: flex-start;
+  gap: 12px;
+  margin-top: 8px;             /* move below the player */
+  padding: 8px 0;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.yt-toolbar button {
-  font-size: 1rem;
+.yt-toolbar button,
+.yt-speed-btn {
+  font-size: 0.95rem;
   padding: 4px 10px;
   cursor: pointer;
-}
-.yt-speed-btn {
-  font-weight: bold;
-  padding: 4px 8px;
   border-radius: 6px;
   background-color: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
+  font-weight: 600;
 }
-/* CSS Ends here
