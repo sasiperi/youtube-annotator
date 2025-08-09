@@ -5,7 +5,7 @@ import {
   //VIEW_TYPE_YOUTUBE_PLAYER,
   //VIEW_TYPE_YOUTUBE_SPLIT,
   PLUGIN_ID,
-  SAVED_TIME_LINK,
+  SAVED_TIME_ANCHOR_PREFIX,
 } from "./constants";
 import {
   YoutubeAnnotatorSettingTab,
@@ -18,6 +18,9 @@ import { YoutubePromptModal } from "./modal/YoutubePromptModal";
 import { createNoteFromTemplate } from "./utils/createNoteFromTemplate";
 import { generateDateTimestamp } from "./utils/date-timestamp";
 import { formatHMS } from "../src/utils/Time";
+import { EditorView } from "@codemirror/view";
+import { Prec } from "@codemirror/state";
+
 
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
@@ -83,14 +86,14 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     );
 
   this.registerMarkdownPostProcessor((el, ctx) => {
-  const anchors = el.querySelectorAll(`a[href^="${SAVED_TIME_LINK}://"]`);
+  const anchors = el.querySelectorAll(`a[href^="${SAVED_TIME_ANCHOR_PREFIX}://"]`);
   anchors.forEach((anchor) => {
     anchor.addEventListener("click", async (e) => {
       e.preventDefault();  // Prevent default external link handling
       e.stopPropagation(); // Stop event from bubbling to Obsidian's external handler
 
       const href = anchor.getAttribute("href");
-      const seconds = parseInt(href?.replace(`${SAVED_TIME_LINK}://`, "") ?? "", 10);
+      const seconds = parseInt(href?.replace(`${SAVED_TIME_ANCHOR_PREFIX}://`, "") ?? "", 10);
       if (isNaN(seconds)) {
         new Notice("Invalid timestamp");
         return;
@@ -104,7 +107,8 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
 
       if (view?.playerWrapper?.isPlayerReady()) {
         view.playerWrapper.seekTo(seconds, true);
-        new Notice(`To ${seconds} sec mark`);
+        new Notice(`To ${formatHMS(seconds)}`);
+        
       } else {
         new Notice("Not ready - Play & try again");
       }
@@ -112,31 +116,25 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
   });
 });
 
-this.registerDomEvent(this.app.workspace.containerEl, "click", (event: MouseEvent) => {
-  // Respect modifier keys so users can still open links normally if they want
+//===================== READING MODE HANDLER =======================
+const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
+
+const readingClickHandler = async (event: MouseEvent) => {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-  // Find the nearest <a> (Live Preview often wraps things)
-  let target = event.target as HTMLElement | null;
-  const anchor = (target?.closest?.("a") ?? null) as HTMLAnchorElement | null;
-  if (!anchor) return;
+  const a = (event.target as HTMLElement)?.closest?.("a") as HTMLAnchorElement | null;
+  if (!a) return;
 
-  const href = anchor.getAttribute("href");
-  const schemePrefix = `${SAVED_TIME_LINK}://`;
-  if (!href || !href.startsWith(schemePrefix)) return;
+  const href = (a.getAttribute("href") || a.getAttribute("data-href") || "").trim();
+  if (!href.startsWith(anchorPrefix)) return;
 
-  // Intercept Obsidian's external link handling
   event.preventDefault();
   event.stopPropagation();
+  (event as any).stopImmediatePropagation?.();
 
-  const secondsStr = href.slice(schemePrefix.length);
-  const seconds = Number(secondsStr);
-  if (!Number.isFinite(seconds)) {
-    new Notice("Invalid timestamp");
-    return;
-  }
+  const seconds = Number(href.slice(anchorPrefix.length));
+  if (!Number.isFinite(seconds)) return;
 
-  // Find the existing YouTube annotator view
   const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
   const view = leaf?.view as YouTubeView | undefined;
 
@@ -144,9 +142,90 @@ this.registerDomEvent(this.app.workspace.containerEl, "click", (event: MouseEven
     view.playerWrapper.seekTo(seconds, true);
     new Notice(`To ${formatHMS(seconds)}`);
   } else {
-    new Notice("Player not ready or not open.");
+    new Notice(`⏳ Player not ready or not open.`);
   }
-});
+};
+
+// Attach in capture phase
+this.app.workspace.containerEl.addEventListener("click", readingClickHandler, true);
+this.register(() =>
+  this.app.workspace.containerEl.removeEventListener("click", readingClickHandler, true)
+);
+
+//===================== LIVE PREVIEW MODE HANDLER =======================
+
+function pickHrefFromDom(e: MouseEvent): string | null {
+  const path = (e.composedPath?.() ?? []) as HTMLElement[];
+  for (const node of path) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node.tagName === "A") {
+      const h = node.getAttribute("href") || node.getAttribute("data-href");
+      if (h) return h.trim();
+    }
+    const dh = node.getAttribute?.("data-href");
+    if (dh) return dh.trim();
+  }
+  const a = (e.target as HTMLElement)?.closest?.("a") as HTMLAnchorElement | null;
+  return a ? (a.getAttribute("href") || a.getAttribute("data-href") || "").trim() : null;
+}
+
+function pickSecondsFromText(e: MouseEvent, view: EditorView, prefix: string): number | null {
+  const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+  if (pos == null) return null;
+  const line = view.state.doc.lineAt(pos);
+  const rel = pos - line.from;
+  const text = line.text;
+
+  const re = new RegExp(`${prefix.replace("#", "\\#")}(\\d+)`, "g");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const start = m.index, end = start + m[0].length;
+    if (rel >= start && rel <= end) {
+      const secs = Number(m[1]);
+      return Number.isFinite(secs) ? secs : null;
+    }
+  }
+  return null;
+}
+
+const handleLP = (e: MouseEvent, view: EditorView): boolean => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+
+  let seconds: number | null = null;
+  const href = pickHrefFromDom(e);
+
+  if (href?.startsWith(anchorPrefix)) {
+    seconds = Number(href.slice(anchorPrefix.length));
+  } else {
+    seconds = pickSecondsFromText(e, view, anchorPrefix); // inline markdown case
+  }
+  if (seconds == null) return false;
+
+  e.preventDefault();
+  e.stopPropagation();
+  (e as any).stopImmediatePropagation?.();
+
+  const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
+  const yt = leaf?.view as YouTubeView | undefined;
+  if (yt?.playerWrapper?.isPlayerReady()) {
+    yt.playerWrapper.seekTo(seconds, true);
+    new Notice(`To ${formatHMS(seconds)}`);
+  } else {
+    //new Notice(`⏳ Player not ready or not open.`);
+  }
+  return true;
+};
+
+this.registerEditorExtension(
+  Prec.highest(
+    EditorView.domEventHandlers({
+      click: (e, view) => handleLP(e, view),
+      mousedown: (e, view) => handleLP(e, view),
+      auxclick: (e, view) => handleLP(e, view),
+    })
+  )
+);
+
 
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
     registerCommands(this);

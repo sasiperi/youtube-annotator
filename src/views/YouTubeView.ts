@@ -1,7 +1,7 @@
 // src/views/YouTubeView.ts starts here
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
-import { VIEW_TYPE_YOUTUBE_ANNOTATOR,SAVED_TIME_LINK } from "../constants";
+import { VIEW_TYPE_YOUTUBE_ANNOTATOR, SAVED_TIME_ANCHOR_PREFIX } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
@@ -129,7 +129,7 @@ export class YouTubeView extends ItemView {
 
       this.playerWrapper?.setPlaybackRate(newSpeed);
       speedBtn.setText(`${newSpeed}x`);
-      //new Notice(`⏩ Speed set to ${newSpeed}x`);
+      //new Notice(`Speed set to ${newSpeed}x`);
     };
 
     tools.appendChild(speedBtn);
@@ -153,12 +153,13 @@ export class YouTubeView extends ItemView {
         timestampBtn.removeAttribute("disabled");
         timestampBtn.onclick = () => {
           if (!this.playerWrapper?.isPlayerReady()) {
-            new Notice("⏳ Player not ready");
+            new Notice("Player not ready");
             return;
           }
           const time = Math.floor(this.playerWrapper.getCurrentTime());
           const timestamp = formatHMS(time);
-          const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
+          //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
+          const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
           navigator.clipboard.writeText(link);
           new Notice(`Copied timestamp: ${link}`);
@@ -184,11 +185,11 @@ export class YouTubeView extends ItemView {
   if (target.tagName !== "A") return;
 
   const href = (target as HTMLAnchorElement).getAttribute("href");
-  if (!href?.startsWith(`${SAVED_TIME_LINK}://`)) return;
+  if (!href?.startsWith(`${SAVED_TIME_ANCHOR_PREFIX}://`)) return;
 
   e.preventDefault();
 
-  const seconds = parseInt(href.replace(`${SAVED_TIME_LINK}://`, ""), 10);
+  const seconds = parseInt(href.replace(`${SAVED_TIME_ANCHOR_PREFIX}://`, ""), 10);
   if (isNaN(seconds)) return;
 
   if (this.playerWrapper?.isPlayerReady()) {

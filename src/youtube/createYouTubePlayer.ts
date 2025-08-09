@@ -22,7 +22,7 @@ export async function createYouTubePlayer(
       },
       events: {
         onReady: (event) => {
-          new Notice("✅ YouTube player ready");
+          new Notice("YouTube player ready");
           if (onReady) onReady(event.target);
           resolve(event.target);
         },

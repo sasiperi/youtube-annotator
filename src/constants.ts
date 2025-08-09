@@ -29,7 +29,9 @@ export const CLASS_ANNOTATION_NOTE = "yt-annotation-note";
 
 // Command IDs for keyboard shortcuts & commands
  export const CMD_YTVIDEO_TIMESTAMP = "capture-video-timestamp";
- export const SAVED_TIME_LINK = "go2saved_timestamp"; //  Jump to saved time-stamp 
+export const SAVED_TIME_ANCHOR_PREFIX = "go2saved-"; // results in links like (#go2saved-123)
+
+
 
 // Setting keys for persistence
 export const SETTING_LAST_USED_URL = "last-used-url";

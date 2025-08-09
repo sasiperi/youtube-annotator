@@ -51,7 +51,7 @@ export async function createNoteFromTemplate(
     if (created instanceof TFile) {
       await app.workspace.getLeaf(true).openFile(created);
     } else {
-      new Notice("✅ Note created but could not open it.");
+      new Notice("Note created but could not open it.");
     }
   } catch (err) {
     //console.error("Failed to create note:", err);

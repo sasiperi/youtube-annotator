@@ -37,3 +37,9 @@
   border: 1px solid var(--background-modifier-border);
   font-weight: 600;
 }
+
+a[href^="#go2saved-"], a[href^="ytstamp://"] {
+  color: var(--link-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
