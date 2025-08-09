@@ -53,16 +53,26 @@ plugin.addCommand({
       }
 
       const time = Math.floor(view.playerWrapper.getCurrentTime());
-      const hrs = Math.floor(time / 3600);
-      const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
-      const secs = (time % 60).toString().padStart(2, "0");
-      const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
+      // const hrs = Math.floor(time / 3600);
+      // const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
+      // const secs = (time % 60).toString().padStart(2, "0");
+      // const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
       //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
       const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
       const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
       if (editor) {
-        editor.replaceRange(link, editor.getCursor());
+        const cur = editor.getCursor();
+        const lineText = editor.getLine(cur.line);
+        const prevChar = cur.ch > 0 ? lineText.charAt(cur.ch - 1) : "";
+        const needsLeadingSpace = cur.ch > 0 && !/\s|\(|\[/.test(prevChar);
+
+        const textToInsert = `${needsLeadingSpace ? " " : ""}${link} `;
+        editor.replaceRange(textToInsert, cur);
+
+        // place caret right after the inserted space
+        editor.setCursor({ line: cur.line, ch: cur.ch + textToInsert.length });
+
         new Notice(`Inserted timestamp: ${link}`);
       } else {
         await navigator.clipboard.writeText(link);
