@@ -1,3 +1,4 @@
+// This is the starting point to get back to. 
 // src/views/YouTubeView.ts starts here
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
@@ -6,6 +7,8 @@ import type YoutubeAnnotatorPlugin from "../main";
 import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 import { formatHMS } from "../utils/Time"
+import { extractVideoIdFromFrontmatter } from "../utils/extractVideoId";
+
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -31,37 +34,26 @@ export class YouTubeView extends ItemView {
     return "YouTube Annotator";
   }
 
-  async onLoad(): Promise<void> {
-    const viewState = this.leaf.getViewState();
-    const stateVideoId = viewState?.state?.videoId;
-    this.videoId = typeof stateVideoId === "string" ? stateVideoId : null;
-    //console.log("onLoad: videoId =", this.videoId);
+  async onOpen(): Promise<void> {
+  // 1) Prefer the view state
+  const viewState = this.leaf.getViewState();
+  const stateVideoId = viewState?.state?.videoId;
+  this.videoId = typeof stateVideoId === "string" ? stateVideoId : null;
 
-    if (!this.videoId) {
-      const file = this.app.workspace.getActiveFile();
-      if (file instanceof TFile) {
-        const content = await this.app.vault.read(file);
-        const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (yamlMatch) {
-          const yaml = parseYaml(yamlMatch[1]);
-          const url = yaml?.originalUrl;
-          //console.log("Found YouTube URL in YAML:", url);
-          //const match = url?.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/); 
-          const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/); // This is what used for reloading Obsidian url
-          if (match) {
-            this.videoId = match[1];
-            
-          }
-        }
-      }
-    }
-
-    if (this.videoId) {
-      await this.renderPlayer();
-    } else {
-      new Notice("No videoId passed to YouTubeView.");
+  // 2) Fallback: active file’s frontmatter (fast via metadataCache)
+  if (!this.videoId) {
+    const file = this.app.workspace.getActiveFile();
+    if (file instanceof TFile) {
+      this.videoId = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
     }
   }
+
+  if (this.videoId) {
+    await this.renderPlayer();
+  } else {
+    new Notice("No videoId passed to YouTubeView.");
+  }
+}
 
   async setState(state: any): Promise<void> {
     const newVideoId = state?.videoId ?? null;
@@ -97,8 +89,7 @@ export class YouTubeView extends ItemView {
     const host = container.createDiv({ cls: "youtube-video-container" });
     const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
     const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
-    // const playerContainer = container.createDiv({ cls: "youtube-video-container" });
-    // playerContainer.id = "yt-player";
+    
 
     const tools = container.createDiv({ cls: "yt-toolbar" });
 
@@ -114,7 +105,7 @@ export class YouTubeView extends ItemView {
       attr: { title: "Capture screenshot" },
     });
     screenshotBtn.onclick = () => {
-      new Notice("📸 Screenshot logic not implemented yet");
+      new Notice("Comming Soon");
         };
 
         const speedBtn = tools.createEl("button", {
@@ -129,7 +120,7 @@ export class YouTubeView extends ItemView {
 
       this.playerWrapper?.setPlaybackRate(newSpeed);
       speedBtn.setText(`${newSpeed}x`);
-      //new Notice(`Speed set to ${newSpeed}x`);
+      //new Notice(`Speed = ${newSpeed}X`);
     };
 
     tools.appendChild(speedBtn);
@@ -162,7 +153,7 @@ export class YouTubeView extends ItemView {
           const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
           navigator.clipboard.writeText(link);
-          new Notice(`Copied timestamp: ${link}`);
+          new Notice(`Copied timeStamp: ${link}`);
         };
 
   // Fetch metadata YouTube Meta data
@@ -180,26 +171,6 @@ export class YouTubeView extends ItemView {
       //  console.log("Player state changed:", state);
       }
     );
-  this.registerDomEvent(this.containerEl, "click", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (target.tagName !== "A") return;
-
-  const href = (target as HTMLAnchorElement).getAttribute("href");
-  if (!href?.startsWith(`${SAVED_TIME_ANCHOR_PREFIX}://`)) return;
-
-  e.preventDefault();
-
-  const seconds = parseInt(href.replace(`${SAVED_TIME_ANCHOR_PREFIX}://`, ""), 10);
-  if (isNaN(seconds)) return;
-
-  if (this.playerWrapper?.isPlayerReady()) {
-    // Always seek internally
-    this.playerWrapper.seekTo(seconds, true);
-    new Notice(`Seeked to ${seconds} sec`);
-  } else {
-    new Notice("Player not ready");
-  }
-});
 
   }
 }

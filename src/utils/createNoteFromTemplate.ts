@@ -23,7 +23,7 @@ export async function createNoteFromTemplate(
     if (templateFile instanceof TFile) {
       content = await app.vault.read(templateFile);
     } else {
-      new Notice("Template file not found. Please check the path in settings.");
+      new Notice("Template file not found. Check path in settings.");
       return;
     }
   } catch (err) {

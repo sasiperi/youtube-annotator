@@ -1,5 +1,5 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   //VIEW_TYPE_YOUTUBE_PLAYER,
@@ -20,33 +20,24 @@ import { generateDateTimestamp } from "./utils/date-timestamp";
 import { formatHMS } from "../src/utils/Time";
 import { EditorView } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
-
+import { extractVideoIdFromFrontmatter } from "./utils/extractVideoId";
 
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
 
-  public async activateView(videoId?: string) {
-    //console.log("Activating view with videoId:", videoId);
+public async activateView(videoId?: string) {
+  let leaf = this.app.workspace.getRightLeaf(false);
+  if (!leaf) leaf = this.app.workspace.getRightLeaf(true);
+  if (!leaf) return;
 
-    const leaf = this.app.workspace.getRightLeaf(false);
-    
-    if (leaf) {
-      await leaf.setViewState({
-        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-        state: { videoId },
-        active: true,
-      });
-
-    /*console.log("Setting view state:", {
-      type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
-      state: { videoId },
-      active: true,
-    });*/
-
-      this.app.workspace.revealLeaf(leaf);
-    }
-  }
+  await leaf.setViewState({
+    type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+    state: { videoId },
+    active: true,
+  });
+  this.app.workspace.revealLeaf(leaf);
+}
 
 
 
@@ -63,36 +54,30 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     );
 
     this.registerEvent(
-  this.app.workspace.on("file-open", async (file) => {
-    if (!file || file.extension !== "md") return;
+    this.app.workspace.on("file-open", async (file) => {
+    if (!(file instanceof TFile) || file.extension !== "md") return;
 
-    const content = await this.app.vault.read(file);
-    const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!yamlMatch) return;
-
-    const yaml = parseYaml(yamlMatch[1]);
-    const url = yaml?.originalUrl;
-    const match = url?.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|$)/);
-    if (!match) return;
-
-    const videoId = match[1];
+    const vid = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
+    if (!vid) return;
 
     // Detach any existing YouTube views
-    const leaves = this.app.workspace.getLeavesOfType("youtube-annotator");
-    for (const leaf of leaves) {
-      await leaf.detach();
-    }
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).forEach((l) => l.detach());
 
-    // Open the player view with this videoId
-    await this.activateView(videoId);
+    await this.activateView(vid);
   })
 );
+  this.app.workspace.onLayoutReady(async () => {
+    const file = this.app.workspace.getActiveFile();
+    if (!(file instanceof TFile)) return;
+    const vid = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
+    if (vid) await this.activateView(vid);
+  });
 
 //===================== READING MODE HANDLER =======================
 const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
 
 const readingClickHandler = async (event: MouseEvent) => {
-  // ✅ Run ONLY when the active Markdown view is in Reading mode
+  //Run ONLY when the active Markdown view is in Reading mode
   const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
   if (!mv || mv.getMode() !== "preview") return;
 
@@ -119,7 +104,7 @@ const readingClickHandler = async (event: MouseEvent) => {
     view.playerWrapper.seekTo(seconds, true);
     new Notice(`To ${formatHMS(seconds)}`);
   } else {
-    new Notice("Player not ready or not open.");
+    new Notice("Player not ready || open.");
   }
 };
 
@@ -168,7 +153,7 @@ function pickSecondsFromText(e: MouseEvent, view: EditorView, prefix: string): n
 }
 
 const handleLP = (e: MouseEvent, view: EditorView): boolean => {
-  // ✅ Ensure we’re actually in a Markdown editor (LP/Source)
+  // Ensure we’re actually in a Markdown editor (LP/Source)
   const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
   if (!mv) return false;
 
@@ -193,9 +178,9 @@ const handleLP = (e: MouseEvent, view: EditorView): boolean => {
   const yt = leaf?.view as YouTubeView | undefined;
   if (yt?.playerWrapper?.isPlayerReady()) {
     yt.playerWrapper.seekTo(seconds, true);
-    new Notice(`⏩ Jumped to ${formatHMS(seconds)}`);
+    new Notice(`To ${formatHMS(seconds)}`);
   } else {
-    new Notice(`Player not ready or not open.`);
+    new Notice(`Play in view & try again.`);
   }
   return true;
 };

@@ -16,7 +16,7 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
   callback: async () => {
     const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
     if (!leaf) {
-      new Notice("YouTube player not active");
+      new Notice("Player not active");
       return;
     }
 
@@ -31,7 +31,7 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
     const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
     await navigator.clipboard.writeText(link);
-    new Notice(`Copied timestamp: ${link}`);
+    new Notice(`Copied timeStamp: ${link}`);
   },
 });
 
@@ -53,11 +53,6 @@ plugin.addCommand({
       }
 
       const time = Math.floor(view.playerWrapper.getCurrentTime());
-      // const hrs = Math.floor(time / 3600);
-      // const mins = Math.floor((time % 3600) / 60).toString().padStart(2, "0");
-      // const secs = (time % 60).toString().padStart(2, "0");
-      // const timestamp = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
-      //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
       const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
       const editor = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
@@ -73,15 +68,15 @@ plugin.addCommand({
         // place caret right after the inserted space
         editor.setCursor({ line: cur.line, ch: cur.ch + textToInsert.length });
 
-        new Notice(`Inserted timestamp: ${link}`);
+        new Notice(`Inserted timeStamp: ${link}`);
       } else {
         await navigator.clipboard.writeText(link);
-        new Notice(`Copied timestamp (no editor): ${link}`);
+        new Notice(`Copied timeStamp (no editor): ${link}`);
       }
     },
   });
 
-  //  =================== FUTURE COMMAND #1 ==========================
+  //  =================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
   
-  //  =================== FUTURE COMMAND #2 ==========================
+  //  =================== PLACE HOLDER FOR FUTURE COMMAND #2 ==========================
 }

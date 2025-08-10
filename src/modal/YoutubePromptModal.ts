@@ -85,7 +85,7 @@ export class YoutubePromptModal extends Modal {
       );
       this.close();
     } else {
-      new Notice("❌ Invalid YouTube URL");
+      new Notice("Invalid YouTube URL");
     }
   }
 
