@@ -1,5 +1,5 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   //VIEW_TYPE_YOUTUBE_PLAYER,
@@ -30,6 +30,7 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     //console.log("Activating view with videoId:", videoId);
 
     const leaf = this.app.workspace.getRightLeaf(false);
+    
     if (leaf) {
       await leaf.setViewState({
         type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
@@ -46,6 +47,8 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
       this.app.workspace.revealLeaf(leaf);
     }
   }
+
+
 
   async onload() {
     this.addRibbonIcon("play-circle", "Open YouTube Annotator", () => {
@@ -83,56 +86,30 @@ export default class YoutubeAnnotatorPlugin extends Plugin {
     // Open the player view with this videoId
     await this.activateView(videoId);
   })
-    );
-
-  this.registerMarkdownPostProcessor((el, ctx) => {
-  const anchors = el.querySelectorAll(`a[href^="${SAVED_TIME_ANCHOR_PREFIX}://"]`);
-  anchors.forEach((anchor) => {
-    anchor.addEventListener("click", async (e) => {
-      e.preventDefault();  // Prevent default external link handling
-      e.stopPropagation(); // Stop event from bubbling to Obsidian's external handler
-
-      const href = anchor.getAttribute("href");
-      const seconds = parseInt(href?.replace(`${SAVED_TIME_ANCHOR_PREFIX}://`, "") ?? "", 10);
-      if (isNaN(seconds)) {
-        new Notice("Invalid timestamp");
-        return;
-      }
-
-      // Find existing YouTube view
-      const leaf = this.app.workspace
-        .getLeavesOfType("youtube-annotator")
-        .first();
-      const view = leaf?.view as any;
-
-      if (view?.playerWrapper?.isPlayerReady()) {
-        view.playerWrapper.seekTo(seconds, true);
-        new Notice(`To ${formatHMS(seconds)}`);
-        
-      } else {
-        new Notice("Not ready - Play & try again");
-      }
-    });
-  });
-});
+);
 
 //===================== READING MODE HANDLER =======================
 const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
 
 const readingClickHandler = async (event: MouseEvent) => {
+  // ✅ Run ONLY when the active Markdown view is in Reading mode
+  const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+  if (!mv || mv.getMode() !== "preview") return;
+
+  // Allow modifier keys to bypass
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
   const a = (event.target as HTMLElement)?.closest?.("a") as HTMLAnchorElement | null;
   if (!a) return;
 
   const href = (a.getAttribute("href") || a.getAttribute("data-href") || "").trim();
-  if (!href.startsWith(anchorPrefix)) return;
+  if (!href.startsWith(`#${SAVED_TIME_ANCHOR_PREFIX}`)) return;
 
   event.preventDefault();
   event.stopPropagation();
   (event as any).stopImmediatePropagation?.();
 
-  const seconds = Number(href.slice(anchorPrefix.length));
+  const seconds = Number(href.slice(1 + SAVED_TIME_ANCHOR_PREFIX.length));
   if (!Number.isFinite(seconds)) return;
 
   const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
@@ -142,17 +119,19 @@ const readingClickHandler = async (event: MouseEvent) => {
     view.playerWrapper.seekTo(seconds, true);
     new Notice(`To ${formatHMS(seconds)}`);
   } else {
-    new Notice(`⏳ Player not ready or not open.`);
+    new Notice("Player not ready or not open.");
   }
 };
 
-// Attach in capture phase
+
+// Capture phase so we beat default anchor behavior
 this.app.workspace.containerEl.addEventListener("click", readingClickHandler, true);
 this.register(() =>
   this.app.workspace.containerEl.removeEventListener("click", readingClickHandler, true)
 );
 
 //===================== LIVE PREVIEW MODE HANDLER =======================
+const anchorPrefixLP = `#${SAVED_TIME_ANCHOR_PREFIX}`;
 
 function pickHrefFromDom(e: MouseEvent): string | null {
   const path = (e.composedPath?.() ?? []) as HTMLElement[];
@@ -189,15 +168,20 @@ function pickSecondsFromText(e: MouseEvent, view: EditorView, prefix: string): n
 }
 
 const handleLP = (e: MouseEvent, view: EditorView): boolean => {
+  // ✅ Ensure we’re actually in a Markdown editor (LP/Source)
+  const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+  if (!mv) return false;
+
+  // Let modifier keys bypass
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
 
   let seconds: number | null = null;
   const href = pickHrefFromDom(e);
 
-  if (href?.startsWith(anchorPrefix)) {
-    seconds = Number(href.slice(anchorPrefix.length));
+  if (href?.startsWith(anchorPrefixLP)) {
+    seconds = Number(href.slice(anchorPrefixLP.length));
   } else {
-    seconds = pickSecondsFromText(e, view, anchorPrefix); // inline markdown case
+    seconds = pickSecondsFromText(e, view, anchorPrefixLP); // inline markdown case
   }
   if (seconds == null) return false;
 
@@ -209,9 +193,9 @@ const handleLP = (e: MouseEvent, view: EditorView): boolean => {
   const yt = leaf?.view as YouTubeView | undefined;
   if (yt?.playerWrapper?.isPlayerReady()) {
     yt.playerWrapper.seekTo(seconds, true);
-    new Notice(`To ${formatHMS(seconds)}`);
+    new Notice(`⏩ Jumped to ${formatHMS(seconds)}`);
   } else {
-    //new Notice(`⏳ Player not ready or not open.`);
+    new Notice(`Player not ready or not open.`);
   }
   return true;
 };
