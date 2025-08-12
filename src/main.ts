@@ -22,6 +22,7 @@ import { EditorView } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { extractVideoIdFromFrontmatter } from "./utils/extractVideoId";
 import { registerTimestampHandlers } from "./utils/timestamphandlers"
+import { registerTypingPauseResume } from "./utils/typingPauseResume";
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
@@ -54,6 +55,7 @@ public async activateView(videoId?: string) {
       (leaf) => new YouTubeView(leaf, this)
     );
 
+
     this.registerEvent(
     this.app.workspace.on("file-open", async (file) => {
     if (!(file instanceof TFile) || file.extension !== "md") return;
@@ -76,24 +78,15 @@ public async activateView(videoId?: string) {
 
  
  //===================== AUTO-PAUSE DURING NOTE TAKING  ======================= 
-  
-  this.registerDomEvent(this.app.workspace.containerEl, "keydown", (e: KeyboardEvent) => {
-  if (!this.settings.autoPauseOnTyping) return;
-  const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
-  if (!mv) return;
-
-  const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
-  const view = leaf?.view as YouTubeView | undefined;
-  if (!view?.playerWrapper?.isPlayerReady()) return;
-
-  const state = view.playerWrapper.getState?.(); // 1=playing
-  if (state === 1) view.playerWrapper.pause();
-});
 
   
 // Register Reading-mode and LP handlers
   const lpExtension = registerTimestampHandlers(this.app, (dispose) => this.register(dispose));
   this.registerEditorExtension(lpExtension);
+
+
+  registerTypingPauseResume(this.app, this.settings, (cb) => this.register(cb))
+
 
 //===================== INITIALIZE PLUGIN =======================
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));

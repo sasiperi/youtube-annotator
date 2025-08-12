@@ -4,10 +4,13 @@ import { DateTimestampFormat } from "./utils/date-timestamp";
 import { FolderSuggest } from "./utils/FolderSuggest";
 import { FileSuggest } from "./utils/FileSuggest";
 import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
+import { registerTypingPauseResume } from "./utils/typingPauseResume";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
 	autoPauseOnTyping: boolean;
+	autoResumeAfterTyping: boolean;
+	autoResumeDelay: number;
 	useDefaultStructure: boolean;
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
@@ -26,6 +29,8 @@ export interface YoutubeAnnotatorSettings {
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	autoPauseOnTyping: true,
+	autoResumeAfterTyping: false,
+	autoResumeDelay: 1,
 	useDefaultStructure: false,
 	enableTranscript: false,
 	defaultPlaybackSpeed: 1.0,
@@ -59,8 +64,8 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE BOOLEAN =========================================
 	new Setting(containerEl)
-	.setName("Use default folder structure")
-	.setDesc("Creates folders and template file under 'YouTube-Annotator/'. Recommended for new users.")
+	.setName("Default folder structure")
+	.setDesc("Creates folders and template file under 'YouTube-Annotator'. Recommended for new users.")
 	.addToggle((toggle) =>
 		toggle
 		.setValue(this.plugin.settings.useDefaultStructure ?? false)
@@ -70,29 +75,10 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 
 			if (value) {
 			await initializeDefaultStructure(this.app, this.plugin);
-			new Notice ( "Default folder structure created.");
+			new Notice ( "Default folders created.");
 			}
 		})
 	);
-
-////============ AUTO-PAUSE VIDEO WHEN TYPING =========================================
-	new Setting(containerEl)
-	.setName("Auto-pause video for note taking")
-	.setDesc("Auto-pause video when taking notes & resume playing with hotkey chosen by user")
-	.addToggle((toggle) =>
-		toggle
-		.setValue(this.plugin.settings.autoPauseOnTyping ?? false)
-		.onChange(async (value) => {
-			this.plugin.settings.autoPauseOnTyping = value;
-			await this.plugin.saveSettings();
-
-			if (value) {
-			this.plugin.settings.autoPauseOnTyping = value;	
-			new Notice ( "Video paused for note taking");
-			}
-		})
-	);
-
 
 ////============ FUTURE FEATURE ==================================================
 
@@ -107,6 +93,46 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 	// 				await this.plugin.saveSettings();
 	// 			})
 	// 	);
+////============ AUTO-RESUME AFTER PLAYING ==================================================
+new Setting(containerEl)
+	.setName("Auto-pause to take Notes")
+	.setDesc("Auto-pause video when taking notes & resume playing with hotkey chosen by user")
+	.addToggle((toggle) =>
+		toggle
+		.setValue(this.plugin.settings.autoResumeAfterTyping ?? false)
+		.onChange(async (value) => {
+			this.plugin.settings.autoResumeAfterTyping = value;
+			await this.plugin.saveSettings();
+
+			if (value) {
+			this.plugin.settings.autoResumeAfterTyping = value;	
+			//new Notice ("Typing will Pause Video");
+			new Notice ("Auto-Presume 2 seconds of idle");
+			}
+		})
+	);
+
+// Slider: Auto‑resume delay (seconds)
+const delaySetting = new Setting(containerEl)
+  .setName("Auto‑resume delay")
+  .setDesc("Seconds to wait after your last keystroke before resuming playback.");
+
+const slider = delaySetting.controlEl.createEl("input", { type: "range" });
+slider.min = "1";
+slider.max = "15";
+slider.step = "1";
+slider.value = String(this.plugin.settings.autoResumeDelay ?? 2);
+
+// live value label
+const valueLabel = delaySetting.controlEl.createEl("span", { text: ` ${slider.value}s`, cls: "setting-item-value" });
+
+slider.addEventListener("input", async () => {
+  const val = Math.max(1, Math.min(15, Math.floor(Number(slider.value))));
+  this.plugin.settings.autoResumeDelay = val;
+  valueLabel.setText(` ${val}s`);
+  await this.plugin.saveSettings();
+});
+
 ////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
 		.setName("Default Playback Speed")
@@ -151,7 +177,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			new FileSuggest(this.app, text.inputEl);
 		});
 
-////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
+////============ ADD PREFIX TO THE NOTE FILENAME ========================================
 	new Setting(containerEl)
 		.setName("Filename Prefix")
 		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
