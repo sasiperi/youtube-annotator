@@ -68,6 +68,8 @@ export class YouTubeView extends ItemView {
     await this.renderPlayer();
   }
 
+  
+
   getVideoUrlWithTime(seconds: number): string {
     return `https://youtu.be/${this.videoId}?t=${seconds}`;
   }
@@ -85,13 +87,50 @@ export class YouTubeView extends ItemView {
       return;
     }
 
-    //console.log("Rendering player for videoId:", this.videoId);
-    const host = container.createDiv({ cls: "youtube-video-container" });
-    const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
-    const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
-    
+  //this.playerWrapper = new PlayerWrapper(player);
 
-    const tools = container.createDiv({ cls: "yt-toolbar" });
+// === Status bar: show current time ===
+const status = this.plugin.addStatusBarItem();
+status.setText("00:00");
+let tick: number | null = null;
+
+const update = () => {
+  if (!this.playerWrapper) return;
+  const sec = Math.floor(this.playerWrapper.getCurrentTime());
+  status.setText(formatHMS(sec));
+};
+
+// const startTick = () => {
+//   if (tick != null) return;
+//   tick = window.setInterval(update, 500);
+// };
+// const stopTick = () => {
+//   if (tick != null) { window.clearInterval(tick); tick = null; }
+// };
+
+update();
+//startTick();
+
+// Clean up when the view unloads
+this.register(() => { stopTick(); status.remove(); });
+  
+
+
+
+
+//console.log("Rendering player for videoId:", this.videoId);
+const host = container.createDiv({ cls: "youtube-video-container" });
+const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
+const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
+
+
+const tools = container.createDiv({ cls: "yt-toolbar" });
+
+// Timer display when the youtube is playing 
+  const timeView = tools.createEl("div", {
+  text: "0:00:00",
+  cls: "yt-timer-display",
+});
 
 // copy timestamp to clipboard 
     const timestampBtn = tools.createEl("button", {
@@ -108,71 +147,102 @@ export class YouTubeView extends ItemView {
       new Notice("Comming Soon");
         };
 
-        const speedBtn = tools.createEl("button", {
-          text: `${this.speeds[this.currentSpeedIndex]}x`,
-          attr: { title: "Change playback speed" },
-          cls: "yt-speed-btn", // CSS class has details
-        });
+    const speedBtn = tools.createEl("button", {
+      text: `${this.speeds[this.currentSpeedIndex]}x`,
+      attr: { title: "Change playback speed" },
+      cls: "yt-speed-btn", // CSS class has details
+    });
 
-        speedBtn.onclick = () => {
-      this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
-      const newSpeed = this.speeds[this.currentSpeedIndex];
+    speedBtn.onclick = () => {
+  this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
+  const newSpeed = this.speeds[this.currentSpeedIndex];
 
-      this.playerWrapper?.setPlaybackRate(newSpeed);
-      speedBtn.setText(`${newSpeed}x`);
-      //new Notice(`Speed = ${newSpeed}X`);
+  this.playerWrapper?.setPlaybackRate(newSpeed);
+  speedBtn.setText(`${newSpeed}x`);
+  //new Notice(`Speed = ${newSpeed}X`);
+};
+
+tools.appendChild(speedBtn);
+
+
+
+// Close button below the youtube video
+  const closeBtn = tools.createEl("button", {
+    text: "❌",
+    attr: { title: "Close player" },
+  });
+  closeBtn.onclick = () => this.leaf.detach();
+
+// lightweight ticker: only runs while playing
+//let tick: number | null = null;
+const updateTimer = () => {
+  if (!this.playerWrapper?.isPlayerReady()) return;
+  const sec = Math.floor(this.playerWrapper.getCurrentTime());
+  timeView.setText(formatHMS(sec));
+};
+const startTick = () => {
+  if (tick != null) return;
+  tick = window.setInterval(updateTimer, 1000); // 1 Hz is plenty
+};
+const stopTick = () => {
+  if (tick != null) {
+    clearInterval(tick);
+    tick = null;
+  }
+};
+// clean up on view unload
+this.register(() => stopTick());
+
+
+// YOUTUBE API Loading
+await loadYouTubeIframeAPI();
+console.log("Loading YouTube Iframe API...");
+
+await createYouTubePlayer(
+  "yt-player",
+  this.videoId,
+  this.plugin.settings,
+  (player) => {
+    this.playerWrapper = new PlayerWrapper(player);
+
+    // prime the timer once the player is ready
+    updateTimer();
+
+    timestampBtn.removeAttribute("disabled");
+    timestampBtn.onclick = () => {
+      if (!this.playerWrapper?.isPlayerReady()) {
+        new Notice("Player not ready", 2000);
+        return;
+      }
+      const time = Math.floor(this.playerWrapper.getCurrentTime());
+      const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
+      navigator.clipboard.writeText(link);
+      new Notice(`Copied timeStamp: ${link}`, 2000);
     };
 
-    tools.appendChild(speedBtn);
+    // Fetch metadata YouTube Meta data
+    const meta = player.getVideoData?.();
+    if (meta) {
+      this.videoTitle = meta.title;
+      this.videoAuthor = meta.author;
+    }
+  },
+  (state) => {
+    // state: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+    if (state === 1) {
+      startTick();
+    } else {
+      stopTick();
+      // also keep display accurate when paused/buffered/ended
+      updateTimer();
+    }
+  }
+);
 
 
-    const closeBtn = tools.createEl("button", {
-      text: "❌",
-      attr: { title: "Close player" },
-    });
-    closeBtn.onclick = () => this.leaf.detach();
 
-    await loadYouTubeIframeAPI();
-    console.log("Loading YouTube Iframe API...");
-
-    await createYouTubePlayer(
-      "yt-player",
-      this.videoId,
-      this.plugin.settings,
-      (player) => {
-        this.playerWrapper = new PlayerWrapper(player);
-        timestampBtn.removeAttribute("disabled");
-        timestampBtn.onclick = () => {
-          if (!this.playerWrapper?.isPlayerReady()) {
-            new Notice("Player not ready");
-            return;
-          }
-          const time = Math.floor(this.playerWrapper.getCurrentTime());
-          const timestamp = formatHMS(time);
-          //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
-          const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
-
-          navigator.clipboard.writeText(link);
-          new Notice(`Copied timeStamp: ${link}`);
-        };
-
-  // Fetch metadata YouTube Meta data
-        const meta = player.getVideoData?.();
-        if (meta) {
-          this.videoTitle = meta.title;
-          this.videoAuthor = meta.author;
-          //console.log("Title:", this.videoTitle);
-          //console.log("Author:", this.videoAuthor);
-        }
-
-        //console.log("PlayerWrapper created and timestamp button enabled");
-      },
-      (state) => {
-      //  console.log("Player state changed:", state);
-      }
-    );
+    
 
   }
 }
-
 // src/views/YouTubeView.ts ends here

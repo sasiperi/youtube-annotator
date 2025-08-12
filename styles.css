@@ -43,3 +43,7 @@ a[href^="#go2saved-"], a[href^="ytstamp://"] {
   text-decoration: underline;
   cursor: pointer;
 }
+.yt-timer-display {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}

@@ -24,7 +24,7 @@ export class YoutubePromptModal extends Modal {
 
     const inputEl = contentEl.createEl("input", {
       type: "text",
-      placeholder: "https://youtube.com/...",
+      placeholder: "Paste https://youtube.com/... link here",
     });
     inputEl.style.width = "100%";
     inputEl.focus();

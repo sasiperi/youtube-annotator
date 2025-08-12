@@ -75,8 +75,23 @@ plugin.addCommand({
       }
     },
   });
-
-  //  =================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
+// === Toggle playback (hotkey-friendly) ===
+plugin.addCommand({
+  id: "toggle-playback",
+  name: "Toggle playback",
+  callback: () => {
+    const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
+    const view = leaf?.view as YouTubeView | undefined;
+    if (!view?.playerWrapper?.isPlayerReady()) {
+      new Notice("Player not ready", 2000);
+      return;
+    }
+    const state = view.playerWrapper.getState(); // 1=playing, 2=paused
+    if (state === 1) view.playerWrapper.pause();
+    else view.playerWrapper.play();
+  },
+});
+   //=================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
   
   //  =================== PLACE HOLDER FOR FUTURE COMMAND #2 ==========================
 }
