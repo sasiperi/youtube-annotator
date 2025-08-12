@@ -74,7 +74,23 @@ public async activateView(videoId?: string) {
     if (vid) await this.activateView(vid);
   });
 
+ 
+ //===================== AUTO-PAUSE DURING NOTE TAKING  ======================= 
+  
+  this.registerDomEvent(this.app.workspace.containerEl, "keydown", (e: KeyboardEvent) => {
+  if (!this.settings.autoPauseOnTyping) return;
+  const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
+  if (!mv) return;
 
+  const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
+  const view = leaf?.view as YouTubeView | undefined;
+  if (!view?.playerWrapper?.isPlayerReady()) return;
+
+  const state = view.playerWrapper.getState?.(); // 1=playing
+  if (state === 1) view.playerWrapper.pause();
+});
+
+  
 // Register Reading-mode and LP handlers
   const lpExtension = registerTimestampHandlers(this.app, (dispose) => this.register(dispose));
   this.registerEditorExtension(lpExtension);

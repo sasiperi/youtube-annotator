@@ -7,6 +7,7 @@ import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
+	autoPauseOnTyping: boolean;
 	useDefaultStructure: boolean;
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
@@ -24,6 +25,7 @@ export interface YoutubeAnnotatorSettings {
 
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
+	autoPauseOnTyping: true,
 	useDefaultStructure: false,
 	enableTranscript: false,
 	defaultPlaybackSpeed: 1.0,
@@ -73,20 +75,38 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		})
 	);
 
+////============ AUTO-PAUSE VIDEO WHEN TYPING =========================================
+	new Setting(containerEl)
+	.setName("Auto-pause video for note taking")
+	.setDesc("Auto-pause video when taking notes & resume playing with hotkey chosen by user")
+	.addToggle((toggle) =>
+		toggle
+		.setValue(this.plugin.settings.autoPauseOnTyping ?? false)
+		.onChange(async (value) => {
+			this.plugin.settings.autoPauseOnTyping = value;
+			await this.plugin.saveSettings();
+
+			if (value) {
+			this.plugin.settings.autoPauseOnTyping = value;	
+			new Notice ( "Video paused for note taking");
+			}
+		})
+	);
+
 
 ////============ FUTURE FEATURE ==================================================
 
-	new Setting(containerEl)
-		.setName("Enable Transcript")
-		.setDesc("Future feature placeholder - Show transcript automatically if available")
-		.addToggle(toggle =>
-			toggle
-				.setValue(this.plugin.settings.enableTranscript)
-				.onChange(async (value) => {
-					this.plugin.settings.enableTranscript = value;
-					await this.plugin.saveSettings();
-				})
-		);
+	// new Setting(containerEl)
+	// 	.setName("Enable Transcript")
+	// 	.setDesc("Future feature placeholder - Show transcript automatically if available")
+	// 	.addToggle(toggle =>
+	// 		toggle
+	// 			.setValue(this.plugin.settings.enableTranscript)
+	// 			.onChange(async (value) => {
+	// 				this.plugin.settings.enableTranscript = value;
+	// 				await this.plugin.saveSettings();
+	// 			})
+	// 	);
 ////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
 		.setName("Default Playback Speed")
