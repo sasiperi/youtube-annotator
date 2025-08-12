@@ -47,3 +47,7 @@ a[href^="#go2saved-"], a[href^="ytstamp://"] {
   font-variant-numeric: tabular-nums;
   opacity: 0.9;
 }
+.yt-delay-row {
+  display: flex;
+  align-items: center;
+}

@@ -94,44 +94,88 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 	// 			})
 	// 	);
 ////============ AUTO-RESUME AFTER PLAYING ==================================================
+// --- Auto‑resume after typing (toggle) – you already have this ---
 new Setting(containerEl)
-	.setName("Auto-pause to take Notes")
-	.setDesc("Auto-pause video when taking notes & resume playing with hotkey chosen by user")
-	.addToggle((toggle) =>
-		toggle
-		.setValue(this.plugin.settings.autoResumeAfterTyping ?? false)
-		.onChange(async (value) => {
-			this.plugin.settings.autoResumeAfterTyping = value;
-			await this.plugin.saveSettings();
+  .setName("Auto‑resume after typing")
+  .setDesc("Resume playback after you stop typing.")
+  .addToggle(t =>
+    t.setValue(this.plugin.settings.autoResumeAfterTyping)
+     .onChange(async (v) => {
+       this.plugin.settings.autoResumeAfterTyping = v;
+       await this.plugin.saveSettings();
+     })
+  );
 
-			if (value) {
-			this.plugin.settings.autoResumeAfterTyping = value;	
-			//new Notice ("Typing will Pause Video");
-			new Notice ("Auto-Presume 2 seconds of idle");
-			}
-		})
-	);
+// --- Auto‑resume delay (slider + numeric input, synced) ---
+const MIN_SEC = 1;
+const MAX_SEC = 10;
 
-// Slider: Auto‑resume delay (seconds)
 const delaySetting = new Setting(containerEl)
   .setName("Auto‑resume delay")
-  .setDesc("Seconds to wait after your last keystroke before resuming playback.");
+  .setDesc("How many seconds after your last keystroke to resume playback.");
 
-const slider = delaySetting.controlEl.createEl("input", { type: "range" });
-slider.min = "1";
-slider.max = "15";
+const row = delaySetting.controlEl.createDiv({ cls: "yt-delay-row" });
+
+// Slider
+const slider = row.createEl("input", { type: "range" });
+slider.min = String(MIN_SEC);
+slider.max = String(MAX_SEC);
 slider.step = "1";
 slider.value = String(this.plugin.settings.autoResumeDelay ?? 2);
+slider.style.marginRight = "0.75rem";
 
-// live value label
-const valueLabel = delaySetting.controlEl.createEl("span", { text: ` ${slider.value}s`, cls: "setting-item-value" });
+// Number input
+const num = row.createEl("input", { type: "number" });
+num.min = String(MIN_SEC);
+num.max = String(MAX_SEC);
+num.step = "1";
+num.value = String(this.plugin.settings.autoResumeDelay ?? 2);
+num.style.width = "4.5rem";
 
-slider.addEventListener("input", async () => {
-  const val = Math.max(1, Math.min(15, Math.floor(Number(slider.value))));
-  this.plugin.settings.autoResumeDelay = val;
-  valueLabel.setText(` ${val}s`);
+// Small live label (optional)
+const label = row.createEl("span", { text: ` ${slider.value}s` });
+label.style.marginLeft = "0.5rem";
+label.style.opacity = "0.8";
+
+// Helper to clamp & normalize
+const clampSeconds = (v: unknown) => {
+  const n = Math.floor(Number(v));
+  if (!Number.isFinite(n)) return MIN_SEC;
+  return Math.min(MAX_SEC, Math.max(MIN_SEC, n));
+};
+
+const applyValue = async (val: number) => {
+  const clamped = clampSeconds(val);
+  slider.value = String(clamped);
+  num.value = String(clamped);
+  label.setText(` ${clamped}s`);
+  this.plugin.settings.autoResumeDelay = clamped;
   await this.plugin.saveSettings();
+};
+
+// Events (two‑way sync)
+slider.addEventListener("input", async () => {
+  await applyValue(slider.valueAsNumber);
 });
+
+// Update on typing and on blur/enter
+num.addEventListener("input", async () => {
+  // Don’t commit on every keystroke if empty; just update label/slider when valid
+  const v = num.value.trim();
+  if (v === "") return;
+  await applyValue(Number(v));
+});
+num.addEventListener("change", async () => {
+  await applyValue(Number(num.value));
+});
+num.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    await applyValue(Number(num.value));
+    (e.target as HTMLInputElement).blur();
+  }
+});
+
 
 ////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
