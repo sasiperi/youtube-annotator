@@ -25,6 +25,11 @@ export class YouTubeView extends ItemView {
   ) {
     super(leaf);
   }
+  
+  getIcon(): string { 
+    //return "play-circle"; // or "play-circle" old icon
+    return "yt-annotator"; 
+  }
 
   getViewType(): string {
     return VIEW_TYPE_YOUTUBE_ANNOTATOR;

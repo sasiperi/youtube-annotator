@@ -108,7 +108,7 @@ new Setting(containerEl)
 
 // --- Auto‑resume delay (slider + numeric input, synced) ---
 const MIN_SEC = 1;
-const MAX_SEC = 10;
+const MAX_SEC = 30;
 
 const delaySetting = new Setting(containerEl)
   .setName("Auto‑resume delay")

@@ -1,4 +1,4 @@
-// src/handlers/timestampHandlers.ts
+// // src/handlers/timestampHandlers.ts
 import { Notice, MarkdownView, App } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
@@ -9,12 +9,12 @@ import { formatHMS } from "./Time";
 const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
 
 // 🔹 helper: is a YouTube URL?
-function isYouTubeUrl(href: string): boolean {
+export function isYouTubeUrl(href: string): boolean {
   return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(href);
 }
 
 // 🔹 helper: extract 11-char videoId from various YT URL shapes
-function extractVideoIdFromUrl(href: string): string | null {
+export function extractVideoIdFromUrl(href: string): string | null {
   const m =
     href.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/) ||
     href.match(/youtube\.com\/.*[?&]v=([A-Za-z0-9_-]{11})/);

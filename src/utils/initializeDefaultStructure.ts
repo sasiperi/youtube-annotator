@@ -42,7 +42,7 @@ tags:
   - notes
 ---
 
-### Notes on {{videoTitle}} ({{originalUrl}})
+### [Notes on {{videoTitle}}]({{originalUrl}})
 
 #### Timestamps
 Start taking notes here...

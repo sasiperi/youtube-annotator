@@ -1,5 +1,5 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile, addIcon } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   //VIEW_TYPE_YOUTUBE_PLAYER,
@@ -23,31 +23,58 @@ import { Prec } from "@codemirror/state";
 import { extractVideoIdFromFrontmatter } from "./utils/extractVideoId";
 import { registerTimestampHandlers } from "./utils/timestamphandlers"
 import { registerTypingPauseResume } from "./utils/typingPauseResume";
+import { registerYouTubeLinkHandlers } from "./utils/youtubeLinkHandlers";
+
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
 
-public async activateView(videoId?: string) {
-  let leaf = this.app.workspace.getRightLeaf(false);
-  if (!leaf) leaf = this.app.workspace.getRightLeaf(true);
+public async activateView(videoId?: string, opts: { focus?: boolean } = {}) {
+  const { focus = false } = opts;
+  const leaf = this.getOrCreateYouTubeLeaf(true);
   if (!leaf) return;
 
   await leaf.setViewState({
     type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
     state: { videoId },
-    active: true,
+    active: !!focus,
   });
-  this.app.workspace.revealLeaf(leaf);
+
+  // Only reveal if you explicitly want to focus the player
+  if (focus) this.app.workspace.revealLeaf(leaf);
+}
+
+/** Reuse the existing YouTube leaf. Prefer a pinned one. Create on the right only if missing. */
+private getOrCreateYouTubeLeaf(preferPinned = true): WorkspaceLeaf | null {
+  const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
+  if (leaves.length) {
+    if (preferPinned) {
+      const pinned = leaves.find((l) => (l as any).pinned);
+      if (pinned) return pinned;
+    }
+    return leaves[0];
+  }
+
+  // None exists yet → create at the right, but don’t force focus
+  return this.app.workspace.getRightLeaf(true);
 }
 
 
 
   async onload() {
 //===================== ADD ICON TO RIBBON =======================
-    this.addRibbonIcon("play-circle", "Open YouTube Annotator", () => {
-      this.openModal();
-    });
+addIcon(
+  "yt-annotator",
+  // Simple, clean triangle-in-rounded-rect (uses currentColor for theme)
+  `<svg viewBox="0 0 24 24" aria-hidden="true">
+     <rect x="2" y="4" rx="4" ry="4" width="20" height="16" fill="none" stroke="currentColor" stroke-width="1.5"/>
+     <path d="M10 9l5 3-5 3V9z" fill="currentColor"/>
+   </svg>`
+);    
 
+  this.addRibbonIcon("yt-annotator", "Open YouTube Annotator", () => {
+    this.openModal();
+  });
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
     this.registerView(
@@ -55,20 +82,47 @@ public async activateView(videoId?: string) {
       (leaf) => new YouTubeView(leaf, this)
     );
 
-
-    this.registerEvent(
+this.registerEvent(
     this.app.workspace.on("file-open", async (file) => {
-    if (!(file instanceof TFile) || file.extension !== "md") return;
+    // Only care about markdown files
+    if (!file || file.extension !== "md") return;
 
-    const vid = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
-    if (!vid) return;
+    // Get videoId from the note's frontmatter
+    const videoId = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
+    if (!videoId) return;
 
-    // Detach any existing YouTube views
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).forEach((l) => l.detach());
+    // If a YouTube view already exists…
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
+    if (existing) {
+      // …and it’s pinned, leave it alone (keep size/minimized state)
+      if ((existing as any).pinned) return;
 
-    await this.activateView(vid);
+      // Otherwise, reuse the leaf and just swap the videoId
+      await existing.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: { videoId },
+        active: true,
+      });
+      this.app.workspace.revealLeaf(existing);
+      return;
+    }
+
+    
+
+    // No existing YT leaf — open (or create) one on the right
+    const right = this.app.workspace.getRightLeaf(false) || this.app.workspace.getRightLeaf(true);
+    if (!right) return; // Safety — should never happen, but TS is happy
+
+    await right.setViewState({
+      type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+      state: { videoId },
+      active: true,
+    });
+    this.app.workspace.revealLeaf(right);
+
   })
 );
+
   this.app.workspace.onLayoutReady(async () => {
     const file = this.app.workspace.getActiveFile();
     if (!(file instanceof TFile)) return;
@@ -87,6 +141,8 @@ public async activateView(videoId?: string) {
 
   registerTypingPauseResume(this.app, this.settings, (cb) => this.register(cb))
 
+  const ytExternalLink = registerYouTubeLinkHandlers(this.app, (cb) => this.register(cb));
+  this.registerEditorExtension(ytExternalLink);
 
 //===================== INITIALIZE PLUGIN =======================
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));
