@@ -9,7 +9,7 @@ import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 import { formatHMS } from "../utils/Time"
 import { extractVideoIdFromFrontmatter } from "../utils/extractVideoId";
 import { captureScreenshot } from "utils/captureScreenshot";
-
+import { ICON_IDS } from "./icon"
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;

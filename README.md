@@ -14,6 +14,9 @@ Annotate YouTube videos directly in Obsidian! This plugin lets you load a YouTub
 -  *(Coming soon)* Screenshot capture & embed within Obsidian
 
 ---
+DEMO 
+![Create Default Folders](src/utils/assets/Demo_Default_Folders.gif)
+---
 
 ## Getting Started
 
