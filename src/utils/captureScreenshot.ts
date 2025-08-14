@@ -84,45 +84,99 @@ async function captureOnMac(absPath: string, format: ImageFormat) {
 }
 
 async function captureOnWindows(app: App, relPath: string, format: ImageFormat) {
-  // Prefer the built-in protocol that opens selection overlay immediately
   const electron = require("electron");
+  const { clipboard, shell } = electron;
+
+  // 1) Clear clipboard to avoid picking up the last image again
+  try { clipboard.clear(); } catch {}
+
+  // 2) Trigger the snip overlay (prefer protocol; fall back gracefully)
+  let launched = false;
   try {
-    // Fast path on most Win10/11 installs (no Snipping Tool window)
-    electron.shell.openExternal("ms-screenclip:");
-  } catch {
+    shell.openExternal("ms-screenclip:");
+    launched = true;
+  } catch {}
+  if (!launched) {
     try {
-      // Fallback: still tries to invoke the protocol via shell
       cp.exec('start "" ms-screenclip:');
-    } catch {
-      try {
-        // Fallback 2: Snipping Tool in direct clip mode (selection overlay)
-        cp.exec('start "" SnippingTool.exe /clip');
-      } catch {
-        try {
-          // Fallback 3: some systems register lowercase alias
-          cp.exec('start "" snippingtool /clip');
-        } catch {
-          // Final fallback: open app (user may need one extra click)
-          cp.exec('start "" SnippingTool.exe');
-        }
-      }
-    }
+      launched = true;
+    } catch {}
+  }
+  if (!launched) {
+    try {
+      cp.exec('start "" SnippingTool.exe /clip');
+      launched = true;
+    } catch {}
+  }
+  if (!launched) {
+    try {
+      cp.exec('start "" snippingtool /clip');
+      launched = true;
+    } catch {}
+  }
+  if (!launched) {
+    // Final fallback: opens app (user may need one more click)
+    try { cp.exec('start "" SnippingTool.exe'); } catch {}
   }
 
-  // Now poll clipboard for the captured image (same as before)
-  const clipboard = electron.clipboard;
-  const img = await waitForClipboardImage(clipboard, 30000, 250);
+  // Tiny head start so the overlay can appear before we start polling
+  await new Promise((r) => setTimeout(r, 180));
+
+  // 3) Poll clipboard for a *new* image (not the previous one)
+  const previousSig = getClipboardImageSignature(clipboard);
+  const img = await waitForNewClipboardImage(clipboard, previousSig, 30000, 180);
   if (!img || img.isEmpty()) throw new Error("No image captured to clipboard.");
 
+  // 4) Encode & save
   let buffer: Buffer;
   if (format === "png") buffer = img.toPNG();
   else if (format === "jpg") buffer = img.toJPEG(90);
-  else buffer = img.toPNG(); // Electron doesn't emit webp directly; keep PNG
+  else buffer = img.toPNG(); // keep PNG for webp request
 
   await app.vault.adapter.writeBinary(
     relPath,
     bufferToArrayBuffer(buffer) as ArrayBuffer
   );
+
+  // 5) Clear to reduce “every other capture” reusing stale clipboard content
+  try { clipboard.clear(); } catch {}
+}
+
+// A light signature so we can tell "new clipboard image" vs the last one
+function getClipboardImageSignature(clipboard: any): string {
+  try {
+    const img = clipboard.readImage();
+    if (!img || img.isEmpty()) return "empty";
+    const { width, height } = img.getSize();
+    const len = img.toPNG()?.length ?? 0;
+    return `${width}x${height}:${len}`;
+  } catch {
+    return "error";
+  }
+}
+
+// Waits for a clipboard image whose signature differs from `prevSig`
+function waitForNewClipboardImage(
+  clipboard: any,
+  prevSig: string,
+  timeoutMs: number,
+  intervalMs: number
+): Promise<any | null> {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const tick = () => {
+      const img = clipboard.readImage?.();
+      if (img && !img.isEmpty()) {
+        const { width, height } = img.getSize();
+        const len = img.toPNG()?.length ?? 0;
+        const sig = `${width}x${height}:${len}`;
+        if (sig !== prevSig) return resolve(img);
+      }
+      if (Date.now() - start > timeoutMs) return resolve(null);
+      setTimeout(tick, intervalMs);
+    };
+    tick();
+  });
 }
 
 

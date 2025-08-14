@@ -150,32 +150,56 @@ const tools = container.createDiv({ cls: "yt-toolbar" });
       attr: { title: "Capture screenshot" },
     });
     
-    screenshotBtn.onclick = async () => {
-  if (!this.plugin.settings.enableScreenCapture) {
-    new Notice("In settings - Enable Screen Capture .", 2000);
-    return;
-  }
-  // 🔑 Pick the best markdown editor *now* (not earlier), then focus it
-  const mdLeaf = this.plugin.getPreferredMarkdownLeaf();
-  if (!mdLeaf) {
-    new Notice("Open a note to insert the screenshot.", 2000);
-    return;
-  }
+    let screenshotBusy = false;
 
-  // Focus the editor so captureScreenshot can see it
-  this.app.workspace.setActiveLeaf(mdLeaf, { focus: true });
+screenshotBtn.onclick = async () => {
+  if (screenshotBusy) return;
+  screenshotBusy = true;
   try {
+    if (!this.plugin.settings.enableScreenCapture) {
+      new Notice("Enable screen capture in settings first.", 2000);
+      return;
+    }
     await captureScreenshot(this.app, {
       folder: this.plugin.settings.screenshotFolder,
       format: this.plugin.settings.screenshotFormat,
       timestampFmt: this.plugin.settings.timestampFormat,
     });
-    // captureScreenshot already inserts the embed at cursor + shows a notice
   } catch (err) {
     console.error(err);
-    new Notice("Screenshot failed. See console.", 2500);
+    new Notice("Screenshot failed. See console for details.", 2500);
+  } finally {
+    screenshotBusy = false;
   }
 };
+
+
+//     screenshotBtn.onclick = async () => {
+//   if (!this.plugin.settings.enableScreenCapture) {
+//     new Notice("In settings - Enable Screen Capture .", 2000);
+//     return;
+//   }
+//   // 🔑 Pick the best markdown editor *now* (not earlier), then focus it
+//   const mdLeaf = this.plugin.getPreferredMarkdownLeaf();
+//   if (!mdLeaf) {
+//     new Notice("Open a note to insert the screenshot.", 2000);
+//     return;
+//   }
+
+//   // Focus the editor so captureScreenshot can see it
+//   this.app.workspace.setActiveLeaf(mdLeaf, { focus: true });
+//   try {
+//     await captureScreenshot(this.app, {
+//       folder: this.plugin.settings.screenshotFolder,
+//       format: this.plugin.settings.screenshotFormat,
+//       timestampFmt: this.plugin.settings.timestampFormat,
+//     });
+//     // captureScreenshot already inserts the embed at cursor + shows a notice
+//   } catch (err) {
+//     console.error(err);
+//     new Notice("Screenshot failed. See console.", 2500);
+//   }
+// };
     // screenshotBtn.onclick = () => {
     //   new Notice("Comming Soon");
     //     };

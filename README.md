@@ -31,11 +31,11 @@ Annotate YouTube videos directly in Obsidian! This plugin lets you load a YouTub
 
 | Feature | Demo |
 |---------|------|
-|Settings | ![](src/utils/assets/demo_settings.gif)|
-|Create Default folder | ![](src/utils/assets/Demo_Default_Folders.gif)|
-|Paste YouTube URL | ![](src/utils/assets/Demo_paste_YouTubeURL.gif)|
-| Add TimeStamp & Annotate | ![](src/utils/assets/Demo_capture_timestamp.gif)|
-|Jump to Saved location | ![](src/utils/assets/Demo_2savedLocation.gif)|
+ Settings | ![](src/utils/assets/demo_settings.gif) |
+| Create Default folder | ![](src/utils/assets/Demo_Default_Folders.gif) |
+| Paste YouTube URL | ![](src/utils/assets/Demo_paste_YouTubeURL.gif) |
+| Add TimeStamp & Annotate | ![](src/utils/assets/Demo_capture_timestamp.gif) |
+| Jump to Saved location | ![](src/utils/assets/Demo_2savedLocation.gif) |
 
 ---
 
@@ -54,7 +54,6 @@ Annotate YouTube videos directly in Obsidian! This plugin lets you load a YouTub
 - Make sure "Restricted mode" is off.
  - Click Browse and search for "youtube-annotator".
 - Click Install, once it's finished, click Enable.
-- Getting Started video [https://youtu.be/rvnW3_HDfqQ]
 - Full featured video coming soon
 
 ---
@@ -80,7 +79,7 @@ originalUrl: "{{originalUrl}}"
 created: {{date}}
 tags: [youtube, notes]
 ---
-⚠️ Other Info
+# ⚠️ Other Info
 - YouTube-only support (for now) Currently optimized for YouTube video links. Support for other platforms (e.g., Vimeo, Loom) is planned in future updates.
 
 - Windows screen capture includes extra padding On Windows, captured screenshots may include a slightly larger area than the selected region. This is due to platform-level rendering quirks. We're exploring tighter bounding fixes.
