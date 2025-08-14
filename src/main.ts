@@ -43,6 +43,8 @@ public async activateView(videoId?: string, opts: { focus?: boolean } = {}) {
   // Only reveal if you explicitly want to focus the player
   if (focus) this.app.workspace.revealLeaf(leaf);
 }
+// ⬇️ Track the last-focused Markdown editor
+  lastMdLeaf: WorkspaceLeaf | null = null;
 
 /** Reuse the existing YouTube leaf. Prefer a pinned one. Create on the right only if missing. */
 private getOrCreateYouTubeLeaf(preferPinned = true): WorkspaceLeaf | null {
@@ -59,10 +61,29 @@ private getOrCreateYouTubeLeaf(preferPinned = true): WorkspaceLeaf | null {
   return this.app.workspace.getRightLeaf(true);
 }
 
+/** Prefer the last-focused Markdown editor; else the active one; else any markdown leaf. */
+getPreferredMarkdownLeaf(): WorkspaceLeaf | null {
+  // Is our cached leaf still part of the workspace?
+  const openMdLeaves = this.app.workspace.getLeavesOfType("markdown");
+  const stillOpen = this.lastMdLeaf
+    ? openMdLeaves.includes(this.lastMdLeaf)
+    : false;
 
+  if (this.lastMdLeaf && stillOpen) {
+    return this.lastMdLeaf;
+  }
 
-  async onload() {
-//===================== ADD ICON TO RIBBON =======================
+  // Fallbacks
+  const active = this.app.workspace.getActiveViewOfType(MarkdownView)?.leaf ?? null;
+  if (active) return active;
+
+  const any = openMdLeaves.first() ?? null;
+  return any;
+}
+
+async onload() {
+
+  //===================== ADD ICON TO RIBBON =======================
 addIcon(
   "yt-annotator",
   // Simple, clean triangle-in-rounded-rect (uses currentColor for theme)
@@ -77,12 +98,12 @@ addIcon(
   });
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
-    this.registerView(
-      VIEW_TYPE_YOUTUBE_ANNOTATOR,
-      (leaf) => new YouTubeView(leaf, this)
-    );
+  this.registerView(
+    VIEW_TYPE_YOUTUBE_ANNOTATOR,
+    (leaf) => new YouTubeView(leaf, this)
+  );
 
-this.registerEvent(
+  this.registerEvent(
     this.app.workspace.on("file-open", async (file) => {
     // Only care about markdown files
     if (!file || file.extension !== "md") return;
@@ -107,7 +128,16 @@ this.registerEvent(
       return;
     }
 
-    
+    // Track the last-focused Markdown editor so toolbar actions know where to insert
+  this.registerEvent(
+    this.app.workspace.on("active-leaf-change", (leaf) => {
+      if (!leaf) return;
+      const view = leaf.view;
+      if (view instanceof MarkdownView) {
+        this.lastMdLeaf = leaf;
+      }
+    })
+  );
 
     // No existing YT leaf — open (or create) one on the right
     const right = this.app.workspace.getRightLeaf(false) || this.app.workspace.getRightLeaf(true);

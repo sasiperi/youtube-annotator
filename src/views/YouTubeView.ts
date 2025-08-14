@@ -8,6 +8,7 @@ import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 import { formatHMS } from "../utils/Time"
 import { extractVideoIdFromFrontmatter } from "../utils/extractVideoId";
+import { captureScreenshot } from "utils/captureScreenshot";
 
 
 export class YouTubeView extends ItemView {
@@ -148,9 +149,36 @@ const tools = container.createDiv({ cls: "yt-toolbar" });
       text: "📷",
       attr: { title: "Capture screenshot" },
     });
-    screenshotBtn.onclick = () => {
-      new Notice("Comming Soon");
-        };
+    
+    screenshotBtn.onclick = async () => {
+  if (!this.plugin.settings.enableScreenCapture) {
+    new Notice("In settings - Enable Screen Capture .", 2000);
+    return;
+  }
+  // 🔑 Pick the best markdown editor *now* (not earlier), then focus it
+  const mdLeaf = this.plugin.getPreferredMarkdownLeaf();
+  if (!mdLeaf) {
+    new Notice("Open a note to insert the screenshot.", 2000);
+    return;
+  }
+
+  // Focus the editor so captureScreenshot can see it
+  this.app.workspace.setActiveLeaf(mdLeaf, { focus: true });
+  try {
+    await captureScreenshot(this.app, {
+      folder: this.plugin.settings.screenshotFolder,
+      format: this.plugin.settings.screenshotFormat,
+      timestampFmt: this.plugin.settings.timestampFormat,
+    });
+    // captureScreenshot already inserts the embed at cursor + shows a notice
+  } catch (err) {
+    console.error(err);
+    new Notice("Screenshot failed. See console.", 2500);
+  }
+};
+    // screenshotBtn.onclick = () => {
+    //   new Notice("Comming Soon");
+    //     };
 
     const speedBtn = tools.createEl("button", {
       text: `${this.speeds[this.currentSpeedIndex]}x`,

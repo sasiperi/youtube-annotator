@@ -6,6 +6,7 @@ import {
 } from "./constants";
 import { formatHMS } from "../src/utils/Time"
 import {YouTubeView} from "./views/YouTubeView"
+import { captureScreenshot } from "utils/captureScreenshot";
 
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
 
@@ -93,5 +94,25 @@ plugin.addCommand({
 });
    //=================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
   
+   plugin.addCommand({
+    id: "capture-youtube-screenshot",
+    name: "Capture screenshot → insert at cursor",
+    callback: async () => {
+      if (!plugin.settings.enableScreenCapture) {
+        new Notice("Screen capture is disabled in settings.", 2000);
+        return;
+      }
+      try {
+        await captureScreenshot(plugin.app, {
+          folder: plugin.settings.screenshotFolder,
+          format: plugin.settings.screenshotFormat,
+          timestampFmt: plugin.settings.timestampFormat, // reuse your existing setting
+        });
+      } catch (err) {
+        console.error(err);
+        new Notice("Screenshot failed. See console for details.", 2500);
+      }
+    },
+  });
   //  =================== PLACE HOLDER FOR FUTURE COMMAND #2 ==========================
 }

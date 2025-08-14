@@ -5,6 +5,9 @@ import { FolderSuggest } from "./utils/FolderSuggest";
 import { FileSuggest } from "./utils/FileSuggest";
 import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
 import { registerTypingPauseResume } from "./utils/typingPauseResume";
+import { ScreenshotOptions } from "utils/captureScreenshot";
+
+export type ScreenshotFormat = "png" | "jpg"; // add "webp" later if desired
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
@@ -15,14 +18,19 @@ export interface YoutubeAnnotatorSettings {
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
+// Default folder names
 	notesFolder: string;              	
 	templateFolder: string;
-	screenshotFolder: string;   
 	mediaFolder: string;
 	templateFile: string;
 	filenamePrefix: string;
+
 	timestampFormat: DateTimestampFormat;
 	devMode: Boolean; 
+	// Settings pertains to Screenshots
+	screenshotFolder: string;
+	enableScreenCapture: boolean;
+  	screenshotFormat: ScreenshotFormat; //alias
 }
 
 
@@ -45,6 +53,8 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	filenamePrefix: "YT_",
 	timestampFormat: DateTimestampFormat.Compact,        
 	
+	enableScreenCapture: false,
+  	screenshotFormat: "png",
 	devMode: false,                                      
 };
 
@@ -265,6 +275,47 @@ num.addEventListener("keydown", async (e) => {
 			await this.plugin.saveSettings();
           })
       );
+
+
+new Setting(containerEl)
+  .setName("Enable screen capture")
+  .setDesc("Use OS snipping tool (Win) or screencapture (mac) and insert at cursor.")
+  .addToggle((toggle) => toggle
+    .setValue(this.plugin.settings.enableScreenCapture)
+    .onChange(async (value) => {
+      this.plugin.settings.enableScreenCapture = value;
+      await this.plugin.saveSettings();
+    })
+  );
+
+new Setting(containerEl)
+  .setName("Screenshot folder")
+  .setDesc("Vault-relative path for saved screenshots.")
+  .addText((toggle) => toggle
+    .setPlaceholder("YouTube-Annotator/screenshots")
+    .setValue(this.plugin.settings.screenshotFolder)
+    .onChange(async (value) => {
+      this.plugin.settings.screenshotFolder = value || "YouTube-Annotator/screenshots";
+      await this.plugin.saveSettings();
+    })
+  );
+
+new Setting(containerEl)
+  .setName("Image format")
+  .setDesc("Format used when saving screenshots.")
+  .addDropdown((dropdown) =>
+    dropdown
+      .addOptions({
+        png: "PNG",
+        jpg: "JPEG",
+      })
+      .setValue(this.plugin.settings.screenshotFormat) 
+      .onChange(async (value) => {
+        this.plugin.settings.screenshotFormat = value as ScreenshotFormat; 
+        await this.plugin.saveSettings();
+      })
+  );
+
 
 //============ BUY ME COFFEE ==================================================
 		containerEl.createEl("hr");
