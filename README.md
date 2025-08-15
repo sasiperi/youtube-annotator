@@ -31,11 +31,11 @@ Annotate YouTube videos directly in Obsidian! This plugin lets you load a YouTub
 
 | Feature | Demo |
 |---------|------|
- Settings | ![](src/utils/assets/demo_settings.gif) |
-| Create Default folder | ![](src/utils/assets/Demo_Default_Folders.gif) |
-| Paste YouTube URL | ![](src/utils/assets/Demo_paste_YouTubeURL.gif) |
-| Add TimeStamp & Annotate | ![](src/utils/assets/Demo_capture_timestamp.gif) |
-| Jump to Saved location | ![](src/utils/assets/Demo_2savedLocation.gif) |
+| Settings | ![](src/assets/demo_settings.gif) |
+| Create Default folder | ![](src/assets/Demo_Default_Folders.gif) |
+| Paste YouTube URL | ![](src/assets/Demo_paste_YouTubeURL.gif) |
+| Add TimeStamp & Annotate | ![](src/assets/Demo_capture_timestamp.gif) |
+| Jump to Saved location | ![](src/assets/Demo_2savedLocation.gif) |
 
 ---
 

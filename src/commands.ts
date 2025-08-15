@@ -92,7 +92,7 @@ plugin.addCommand({
     else view.playerWrapper.play();
   },
 });
-   //=================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
+   //=================== CAPTURE REGION FOR SCREENSHOT ==========================  
   
    plugin.addCommand({
     id: "capture-youtube-screenshot",
@@ -114,5 +114,31 @@ plugin.addCommand({
       }
     },
   });
+
+
+//=================== REUSE LAST CAPTURE REGION FOR NEXT CAPTURE ==========================  
+plugin.addCommand({
+  id: "screenshot-capture-reuse-region",
+  name: "Screenshot: Capture (reuse last region if available)",
+  callback: async () => {
+    if (!plugin.settings.enableScreenCapture) {
+      new Notice("Enable screen capture in settings first.", 2000);
+      return;
+    }
+    try {
+      await captureScreenshot(plugin.app, {
+        folder: plugin.settings.screenshotFolder,
+        format: plugin.settings.screenshotFormat,
+        timestampFmt: plugin.settings.timestampFormat,
+        // 👇 this extra flag is optional; we’ll read it in the Windows branch
+        reuseLastRegion: plugin.settings.rememberLastRegion,
+      } as any); // keep type loose so we don't disturb your existing ScreenshotOptions elsewhere
+    } catch (e) {
+      console.error(e);
+      new Notice("Screenshot failed. See console for details.", 2500);
+    }
+  },
+});
+  
   //  =================== PLACE HOLDER FOR FUTURE COMMAND #2 ==========================
 }
