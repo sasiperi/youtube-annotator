@@ -1,4 +1,3 @@
-// This is the starting point to get back to. 
 // src/views/YouTubeView.ts starts here
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
@@ -93,7 +92,6 @@ export class YouTubeView extends ItemView {
       return;
     }
 
-  //this.playerWrapper = new PlayerWrapper(player);
 
 // === Status bar: show current time ===
 const status = this.plugin.addStatusBarItem();
@@ -106,24 +104,12 @@ const update = () => {
   status.setText(formatHMS(sec));
 };
 
-// const startTick = () => {
-//   if (tick != null) return;
-//   tick = window.setInterval(update, 500);
-// };
-// const stopTick = () => {
-//   if (tick != null) { window.clearInterval(tick); tick = null; }
-// };
-
 update();
 //startTick();
 
 // Clean up when the view unloads
 this.register(() => { stopTick(); status.remove(); });
   
-
-
-
-
 //console.log("Rendering player for videoId:", this.videoId);
 const host = container.createDiv({ cls: "youtube-video-container" });
 const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
@@ -138,13 +124,13 @@ const tools = container.createDiv({ cls: "yt-toolbar" });
   cls: "yt-timer-display",
 });
 
-// copy timestamp to clipboard 
+// ============ copy timestamp to clipboard =====================
     const timestampBtn = tools.createEl("button", {
       text: "🕒",
       attr: { title: "Copy timestamp", disabled: "true" },
     });
 
-// Take screenshot and append it to the note location
+// ============= SCREENSHOT APPEND IT TO NOTE  ============
     const screenshotBtn = tools.createEl("button", {
       text: "📷",
       attr: { title: "Capture screenshot" },
@@ -173,42 +159,37 @@ screenshotBtn.onclick = async () => {
   }
 };
 
+// ================ REUSE LAST CAPTURE AREA EXPERIMENTAL ===================
 
-//     screenshotBtn.onclick = async () => {
+// const shotReuseBtn = tools.createEl("button", {
+//   text: "🔁",
+//   attr: { title: "Screenshot: reuse last region" },
+// });
+
+// shotReuseBtn.onclick = async () => {
 //   if (!this.plugin.settings.enableScreenCapture) {
-//     new Notice("In settings - Enable Screen Capture .", 2000);
+//     new Notice("Enable screen capture in settings first.", 1800);
 //     return;
 //   }
-//   // 🔑 Pick the best markdown editor *now* (not earlier), then focus it
-//   const mdLeaf = this.plugin.getPreferredMarkdownLeaf();
-//   if (!mdLeaf) {
-//     new Notice("Open a note to insert the screenshot.", 2000);
-//     return;
-//   }
-
-//   // Focus the editor so captureScreenshot can see it
-//   this.app.workspace.setActiveLeaf(mdLeaf, { focus: true });
 //   try {
 //     await captureScreenshot(this.app, {
 //       folder: this.plugin.settings.screenshotFolder,
 //       format: this.plugin.settings.screenshotFormat,
 //       timestampFmt: this.plugin.settings.timestampFormat,
+//       reuseLastRegion: true, // reuse region (best-effort on Windows)
 //     });
-//     // captureScreenshot already inserts the embed at cursor + shows a notice
 //   } catch (err) {
 //     console.error(err);
-//     new Notice("Screenshot failed. See console.", 2500);
+//     new Notice("Screenshot failed. See console for details.", 2500);
 //   }
 // };
-    // screenshotBtn.onclick = () => {
-    //   new Notice("Comming Soon");
-    //     };
 
-    const speedBtn = tools.createEl("button", {
-      text: `${this.speeds[this.currentSpeedIndex]}x`,
-      attr: { title: "Change playback speed" },
-      cls: "yt-speed-btn", // CSS class has details
-    });
+// ================ CHANGE PLAYBACK SPEED ===================
+  const speedBtn = tools.createEl("button", {
+    text: `${this.speeds[this.currentSpeedIndex]}x`,
+    attr: { title: "Change playback speed" },
+    cls: "yt-speed-btn", // CSS class has details
+  });
 
     speedBtn.onclick = () => {
   this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
@@ -223,15 +204,14 @@ tools.appendChild(speedBtn);
 
 
 
-// Close button below the youtube video
+// ============== CLOSE YOUTUBE SIDE VIEW ==============
   const closeBtn = tools.createEl("button", {
     text: "❌",
     attr: { title: "Close player" },
   });
   closeBtn.onclick = () => this.leaf.detach();
 
-// lightweight ticker: only runs while playing
-//let tick: number | null = null;
+// only runs while playing
 const updateTimer = () => {
   if (!this.playerWrapper?.isPlayerReady()) return;
   const sec = Math.floor(this.playerWrapper.getCurrentTime());
@@ -239,7 +219,7 @@ const updateTimer = () => {
 };
 const startTick = () => {
   if (tick != null) return;
-  tick = window.setInterval(updateTimer, 1000); // 1 Hz is plenty
+  tick = window.setInterval(updateTimer, 1000);
 };
 const stopTick = () => {
   if (tick != null) {
@@ -296,10 +276,6 @@ await createYouTubePlayer(
   }
 );
 
-
-
-    
-
-  }
+}
 }
 // src/views/YouTubeView.ts ends here

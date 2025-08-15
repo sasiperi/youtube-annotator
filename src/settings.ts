@@ -31,7 +31,7 @@ export interface YoutubeAnnotatorSettings {
 	screenshotFolder: string;
 	enableScreenCapture: boolean;
   	screenshotFormat: ScreenshotFormat;
-	rememberLastRegion: boolean;   
+	reuseLastRegion: boolean;   
 }
 
 
@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	
 	enableScreenCapture: false,
   	screenshotFormat: "png",
-	rememberLastRegion: false,   
+	reuseLastRegion: false,   
 	devMode: false,                                      
 };
 
@@ -290,17 +290,17 @@ new Setting(containerEl)
     })
   );
 
-  // Other screen capture options i.e. last region
-new Setting(containerEl)
-  .setName("Last captured region")
-  .setDesc("Experimental - Windows only")
-  .addToggle(t => t
-    .setValue(this.plugin.settings.rememberLastRegion)
-    .onChange(async (v) => {
-      this.plugin.settings.rememberLastRegion = v;
-      await this.plugin.saveSettings();
-    })
-  );
+  // ================ REUSE LAST REGION EXPERIMENTAL ===================
+// new Setting(containerEl)
+//   .setName("Last captured region")
+//   .setDesc("Experimental - Windows only")
+//   .addToggle((toggle) => toggle
+//     .setValue(this.plugin.settings.reuseLastRegion)
+//     .onChange(async (value) => {
+//       this.plugin.settings.reuseLastRegion = value;
+//       await this.plugin.saveSettings();
+//     })
+//   );
 
 new Setting(containerEl)
   .setName("Screenshot folder")
