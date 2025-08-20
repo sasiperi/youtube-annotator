@@ -30,7 +30,7 @@ declare global {
       };
     }
 
-    var Player: {
+    const Player: {
       new (elementId: string | HTMLElement, options: PlayerOptions): Player;
     };
 
