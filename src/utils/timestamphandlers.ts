@@ -1,4 +1,4 @@
-// src/handlers/timestampHandlers.ts
+// // src/handlers/timestampHandlers.ts
 import { Notice, MarkdownView, App } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
@@ -7,6 +7,19 @@ import { YouTubeView } from "../views/YouTubeView";
 import { formatHMS } from "./Time";
 
 const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
+
+// 🔹 helper: is a YouTube URL?
+export function isYouTubeUrl(href: string): boolean {
+  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(href);
+}
+
+// 🔹 helper: extract 11-char videoId from various YT URL shapes
+export function extractVideoIdFromUrl(href: string): string | null {
+  const m =
+    href.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/) ||
+    href.match(/youtube\.com\/.*[?&]v=([A-Za-z0-9_-]{11})/);
+  return m?.[1] ?? null;
+}
 
 // ---- Reading Mode handler (preview only)
 function readingClickHandler(app: App) {
@@ -19,23 +32,48 @@ function readingClickHandler(app: App) {
     if (!a) return;
 
     const href = (a.getAttribute("href") || a.getAttribute("data-href") || "").trim();
-    if (!href.startsWith(anchorPrefix)) return;
+    if (!href) return;
 
-    event.preventDefault();
-    event.stopPropagation();
-    (event as any).stopImmediatePropagation?.();
+    // ✅ our timestamp anchors
+    if (href && href.startsWith(anchorPrefix)) {
+      event.preventDefault();
+      event.stopPropagation();
+      (event as any).stopImmediatePropagation?.();
 
-    const seconds = Number(href.slice(anchorPrefix.length));
-    if (!Number.isFinite(seconds)) return;
+      const seconds = Number(href.slice(anchorPrefix.length));
+      if (!Number.isFinite(seconds)) return;
 
-    const leaf = app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
-    const view = leaf?.view as YouTubeView | undefined;
+      const leaf = app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
+      const view = leaf?.view as YouTubeView | undefined;
 
-    if (view?.playerWrapper?.isPlayerReady()) {
-      view.playerWrapper.seekTo(seconds, true);
-      new Notice(`To ${formatHMS(seconds)}`);
-    } else {
-      new Notice("Player not running.");
+      if (view?.playerWrapper?.isPlayerReady()) {
+        view.playerWrapper.seekTo(seconds, true);
+        new Notice(`To ${formatHMS(seconds)}`, 2000);
+      } else {
+        new Notice("Player not running.", 2000);
+      }
+      return;
+    }
+
+    // 🆕 normal YouTube links → open in side view
+    if (isYouTubeUrl(href)) {
+      event.preventDefault();
+      event.stopPropagation();
+      (event as any).stopImmediatePropagation?.();
+
+      const videoId = extractVideoIdFromUrl(href);
+      if (!videoId) return;
+
+      let right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
+      if (!right) return;
+      await right.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: { videoId },
+        active: true,
+      });
+      app.workspace.revealLeaf(right);
+      new Notice("Opened video in side view", 2000);
+      return;
     }
   };
 }
@@ -84,8 +122,26 @@ function livePreviewHandler(app: App) {
     let seconds: number | null = null;
 
     const href = pickHrefFromDom(e);
-    if (href?.startsWith(anchorPrefix)) {
+    if (href && href.startsWith(anchorPrefix)) {
       seconds = Number(href.slice(anchorPrefix.length));
+    } else if (href && isYouTubeUrl(href)) {
+      // 🆕 normal YouTube links in Live Preview → open side view
+      e.preventDefault();
+      e.stopPropagation();
+      (e as any).stopImmediatePropagation?.();
+
+      const videoId = extractVideoIdFromUrl(href);
+      if (!videoId) return true;
+
+      let right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
+      if (!right) return true;
+      right.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: { videoId },
+        active: true,
+      }).then(() => app.workspace.revealLeaf(right!));
+      new Notice("Opened video in side view", 2000);
+      return true;
     } else {
       seconds = pickSecondsFromText(e, view, anchorPrefix);
     }
@@ -99,9 +155,9 @@ function livePreviewHandler(app: App) {
     const yt = leaf?.view as YouTubeView | undefined;
     if (yt?.playerWrapper?.isPlayerReady()) {
       yt.playerWrapper.seekTo(seconds, true);
-      new Notice(`To ${formatHMS(seconds)}`);
+      new Notice(`To ${formatHMS(seconds)}`, 2000);
     } else {
-      new Notice("Play & try again.");
+      new Notice("Play & try again.", 2000);
     }
     return true;
   };

@@ -1,4 +1,3 @@
-// This is the starting point to get back to. 
 // src/views/YouTubeView.ts starts here
 import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
@@ -8,7 +7,8 @@ import { createYouTubePlayer } from "../youtube/createYouTubePlayer";
 import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 import { formatHMS } from "../utils/Time"
 import { extractVideoIdFromFrontmatter } from "../utils/extractVideoId";
-
+import { captureScreenshot } from "utils/captureScreenshot";
+import { ICON_IDS } from "./icon"
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -24,6 +24,11 @@ export class YouTubeView extends ItemView {
     private plugin: YoutubeAnnotatorPlugin
   ) {
     super(leaf);
+  }
+  
+  getIcon(): string { 
+    //return "play-circle"; // or "play-circle" old icon
+    return "yt-annotator"; 
   }
 
   getViewType(): string {
@@ -68,6 +73,8 @@ export class YouTubeView extends ItemView {
     await this.renderPlayer();
   }
 
+  
+
   getVideoUrlWithTime(seconds: number): string {
     return `https://youtu.be/${this.videoId}?t=${seconds}`;
   }
@@ -85,94 +92,190 @@ export class YouTubeView extends ItemView {
       return;
     }
 
-    //console.log("Rendering player for videoId:", this.videoId);
-    const host = container.createDiv({ cls: "youtube-video-container" });
-    const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
-    const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
-    
 
-    const tools = container.createDiv({ cls: "yt-toolbar" });
+// === Status bar: show current time ===
+const status = this.plugin.addStatusBarItem();
+status.setText("00:00");
+let tick: number | null = null;
 
-// copy timestamp to clipboard 
+const update = () => {
+  if (!this.playerWrapper) return;
+  const sec = Math.floor(this.playerWrapper.getCurrentTime());
+  status.setText(formatHMS(sec));
+};
+
+update();
+//startTick();
+
+// Clean up when the view unloads
+this.register(() => { stopTick(); status.remove(); });
+  
+//console.log("Rendering player for videoId:", this.videoId);
+const host = container.createDiv({ cls: "youtube-video-container" });
+const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
+const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
+
+
+const tools = container.createDiv({ cls: "yt-toolbar" });
+
+// Timer display when the youtube is playing 
+  const timeView = tools.createEl("div", {
+  text: "0:00:00",
+  cls: "yt-timer-display",
+});
+
+// ============ copy timestamp to clipboard =====================
     const timestampBtn = tools.createEl("button", {
       text: "🕒",
       attr: { title: "Copy timestamp", disabled: "true" },
     });
 
-// Take screenshot and append it to the note location
+// ============= SCREENSHOT APPEND IT TO NOTE  ============
     const screenshotBtn = tools.createEl("button", {
       text: "📷",
       attr: { title: "Capture screenshot" },
     });
-    screenshotBtn.onclick = () => {
-      new Notice("Comming Soon");
-        };
+    
+    let screenshotBusy = false;
 
-        const speedBtn = tools.createEl("button", {
-          text: `${this.speeds[this.currentSpeedIndex]}x`,
-          attr: { title: "Change playback speed" },
-          cls: "yt-speed-btn", // CSS class has details
-        });
+screenshotBtn.onclick = async () => {
+  if (screenshotBusy) return;
+  screenshotBusy = true;
+  try {
+    if (!this.plugin.settings.enableScreenCapture) {
+      new Notice("Enable screen capture in settings first.", 2000);
+      return;
+    }
+    await captureScreenshot(this.app, {
+      folder: this.plugin.settings.screenshotFolder,
+      format: this.plugin.settings.screenshotFormat,
+      timestampFmt: this.plugin.settings.timestampFormat,
+    });
+  } catch (err) {
+    console.error(err);
+    new Notice("Screenshot failed. See console for details.", 2500);
+  } finally {
+    screenshotBusy = false;
+  }
+};
 
-        speedBtn.onclick = () => {
-      this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
-      const newSpeed = this.speeds[this.currentSpeedIndex];
+// ================ REUSE LAST CAPTURE AREA EXPERIMENTAL ===================
 
-      this.playerWrapper?.setPlaybackRate(newSpeed);
-      speedBtn.setText(`${newSpeed}x`);
-      //new Notice(`Speed = ${newSpeed}X`);
+// const shotReuseBtn = tools.createEl("button", {
+//   text: "🔁",
+//   attr: { title: "Screenshot: reuse last region" },
+// });
+
+// shotReuseBtn.onclick = async () => {
+//   if (!this.plugin.settings.enableScreenCapture) {
+//     new Notice("Enable screen capture in settings first.", 1800);
+//     return;
+//   }
+//   try {
+//     await captureScreenshot(this.app, {
+//       folder: this.plugin.settings.screenshotFolder,
+//       format: this.plugin.settings.screenshotFormat,
+//       timestampFmt: this.plugin.settings.timestampFormat,
+//       reuseLastRegion: true, // reuse region (best-effort on Windows)
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     new Notice("Screenshot failed. See console for details.", 2500);
+//   }
+// };
+
+// ================ CHANGE PLAYBACK SPEED ===================
+  const speedBtn = tools.createEl("button", {
+    text: `${this.speeds[this.currentSpeedIndex]}x`,
+    attr: { title: "Change playback speed" },
+    cls: "yt-speed-btn", // CSS class has details
+  });
+
+    speedBtn.onclick = () => {
+  this.currentSpeedIndex = (this.currentSpeedIndex + 1) % this.speeds.length;
+  const newSpeed = this.speeds[this.currentSpeedIndex];
+
+  this.playerWrapper?.setPlaybackRate(newSpeed);
+  speedBtn.setText(`${newSpeed}x`);
+  //new Notice(`Speed = ${newSpeed}X`);
+};
+
+tools.appendChild(speedBtn);
+
+
+
+// ============== CLOSE YOUTUBE SIDE VIEW ==============
+  const closeBtn = tools.createEl("button", {
+    text: "❌",
+    attr: { title: "Close player" },
+  });
+  closeBtn.onclick = () => this.leaf.detach();
+
+// only runs while playing
+const updateTimer = () => {
+  if (!this.playerWrapper?.isPlayerReady()) return;
+  const sec = Math.floor(this.playerWrapper.getCurrentTime());
+  timeView.setText(formatHMS(sec));
+};
+const startTick = () => {
+  if (tick != null) return;
+  tick = window.setInterval(updateTimer, 1000);
+};
+const stopTick = () => {
+  if (tick != null) {
+    clearInterval(tick);
+    tick = null;
+  }
+};
+// clean up on view unload
+this.register(() => stopTick());
+
+
+// YOUTUBE API Loading
+await loadYouTubeIframeAPI();
+console.log("Loading YouTube Iframe API...");
+
+await createYouTubePlayer(
+  "yt-player",
+  this.videoId,
+  this.plugin.settings,
+  (player) => {
+    this.playerWrapper = new PlayerWrapper(player);
+
+    // prime the timer once the player is ready
+    updateTimer();
+
+    timestampBtn.removeAttribute("disabled");
+    timestampBtn.onclick = () => {
+      if (!this.playerWrapper?.isPlayerReady()) {
+        new Notice("Player not ready", 2000);
+        return;
+      }
+      const time = Math.floor(this.playerWrapper.getCurrentTime());
+      const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
+      navigator.clipboard.writeText(link);
+      new Notice(`Copied timeStamp: ${link}`, 2000);
     };
 
-    tools.appendChild(speedBtn);
-
-
-    const closeBtn = tools.createEl("button", {
-      text: "❌",
-      attr: { title: "Close player" },
-    });
-    closeBtn.onclick = () => this.leaf.detach();
-
-    await loadYouTubeIframeAPI();
-    console.log("Loading YouTube Iframe API...");
-
-    await createYouTubePlayer(
-      "yt-player",
-      this.videoId,
-      this.plugin.settings,
-      (player) => {
-        this.playerWrapper = new PlayerWrapper(player);
-        timestampBtn.removeAttribute("disabled");
-        timestampBtn.onclick = () => {
-          if (!this.playerWrapper?.isPlayerReady()) {
-            new Notice("Player not ready");
-            return;
-          }
-          const time = Math.floor(this.playerWrapper.getCurrentTime());
-          const timestamp = formatHMS(time);
-          //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
-          const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
-
-          navigator.clipboard.writeText(link);
-          new Notice(`Copied timeStamp: ${link}`);
-        };
-
-  // Fetch metadata YouTube Meta data
-        const meta = player.getVideoData?.();
-        if (meta) {
-          this.videoTitle = meta.title;
-          this.videoAuthor = meta.author;
-          //console.log("Title:", this.videoTitle);
-          //console.log("Author:", this.videoAuthor);
-        }
-
-        //console.log("PlayerWrapper created and timestamp button enabled");
-      },
-      (state) => {
-      //  console.log("Player state changed:", state);
-      }
-    );
-
+    // Fetch metadata YouTube Meta data
+    const meta = player.getVideoData?.();
+    if (meta) {
+      this.videoTitle = meta.title;
+      this.videoAuthor = meta.author;
+    }
+  },
+  (state) => {
+    // state: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+    if (state === 1) {
+      startTick();
+    } else {
+      stopTick();
+      // also keep display accurate when paused/buffered/ended
+      updateTimer();
+    }
   }
-}
+);
 
+}
+}
 // src/views/YouTubeView.ts ends here

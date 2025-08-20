@@ -1,5 +1,5 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile } from "obsidian";
+import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile, addIcon } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
   //VIEW_TYPE_YOUTUBE_PLAYER,
@@ -22,51 +22,137 @@ import { EditorView } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { extractVideoIdFromFrontmatter } from "./utils/extractVideoId";
 import { registerTimestampHandlers } from "./utils/timestamphandlers"
+import { registerTypingPauseResume } from "./utils/typingPauseResume";
+import { registerYouTubeLinkHandlers } from "./utils/youtubeLinkHandlers";
+
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
 
-public async activateView(videoId?: string) {
-  let leaf = this.app.workspace.getRightLeaf(false);
-  if (!leaf) leaf = this.app.workspace.getRightLeaf(true);
+public async activateView(videoId?: string, opts: { focus?: boolean } = {}) {
+  const { focus = false } = opts;
+  const leaf = this.getOrCreateYouTubeLeaf(true);
   if (!leaf) return;
 
   await leaf.setViewState({
     type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
     state: { videoId },
-    active: true,
+    active: !!focus,
   });
-  this.app.workspace.revealLeaf(leaf);
+
+  // Only reveal if you explicitly want to focus the player
+  if (focus) this.app.workspace.revealLeaf(leaf);
+}
+// ⬇️ Track the last-focused Markdown editor
+  lastMdLeaf: WorkspaceLeaf | null = null;
+
+/** Reuse the existing YouTube leaf. Prefer a pinned one. Create on the right only if missing. */
+private getOrCreateYouTubeLeaf(preferPinned = true): WorkspaceLeaf | null {
+  const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
+  if (leaves.length) {
+    if (preferPinned) {
+      const pinned = leaves.find((l) => (l as any).pinned);
+      if (pinned) return pinned;
+    }
+    return leaves[0];
+  }
+
+  // None exists yet → create at the right, but don’t force focus
+  return this.app.workspace.getRightLeaf(true);
 }
 
+/** Prefer the last-focused Markdown editor; else the active one; else any markdown leaf. */
+getPreferredMarkdownLeaf(): WorkspaceLeaf | null {
+  // Is our cached leaf still part of the workspace?
+  const openMdLeaves = this.app.workspace.getLeavesOfType("markdown");
+  const stillOpen = this.lastMdLeaf
+    ? openMdLeaves.includes(this.lastMdLeaf)
+    : false;
 
+  if (this.lastMdLeaf && stillOpen) {
+    return this.lastMdLeaf;
+  }
 
-  async onload() {
-//===================== ADD ICON TO RIBBON =======================
-    this.addRibbonIcon("play-circle", "Open YouTube Annotator", () => {
-      this.openModal();
-    });
+  // Fallbacks
+  const active = this.app.workspace.getActiveViewOfType(MarkdownView)?.leaf ?? null;
+  if (active) return active;
 
+  const any = openMdLeaves.first() ?? null;
+  return any;
+}
+
+async onload() {
+
+  //===================== ADD ICON TO RIBBON =======================
+addIcon(
+  "yt-annotator",
+  // Simple, clean triangle-in-rounded-rect (uses currentColor for theme)
+  `<svg viewBox="0 0 24 24" aria-hidden="true">
+     <rect x="2" y="4" rx="4" ry="4" width="20" height="16" fill="none" stroke="currentColor" stroke-width="1.5"/>
+     <path d="M10 9l5 3-5 3V9z" fill="currentColor"/>
+   </svg>`
+);    
+
+  this.addRibbonIcon("yt-annotator", "Open YouTube Annotator", () => {
+    this.openModal();
+  });
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 
-    this.registerView(
-      VIEW_TYPE_YOUTUBE_ANNOTATOR,
-      (leaf) => new YouTubeView(leaf, this)
-    );
+  this.registerView(
+    VIEW_TYPE_YOUTUBE_ANNOTATOR,
+    (leaf) => new YouTubeView(leaf, this)
+  );
 
-    this.registerEvent(
+  this.registerEvent(
     this.app.workspace.on("file-open", async (file) => {
-    if (!(file instanceof TFile) || file.extension !== "md") return;
+    // Only care about markdown files
+    if (!file || file.extension !== "md") return;
 
-    const vid = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
-    if (!vid) return;
+    // Get videoId from the note's frontmatter
+    const videoId = extractVideoIdFromFrontmatter(file, this.app.metadataCache);
+    if (!videoId) return;
 
-    // Detach any existing YouTube views
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).forEach((l) => l.detach());
+    // If a YouTube view already exists…
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
+    if (existing) {
+      // …and it’s pinned, leave it alone (keep size/minimized state)
+      if ((existing as any).pinned) return;
 
-    await this.activateView(vid);
+      // Otherwise, reuse the leaf and just swap the videoId
+      await existing.setViewState({
+        type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+        state: { videoId },
+        active: true,
+      });
+      this.app.workspace.revealLeaf(existing);
+      return;
+    }
+
+    // Track the last-focused Markdown editor so toolbar actions know where to insert
+  this.registerEvent(
+    this.app.workspace.on("active-leaf-change", (leaf) => {
+      if (!leaf) return;
+      const view = leaf.view;
+      if (view instanceof MarkdownView) {
+        this.lastMdLeaf = leaf;
+      }
+    })
+  );
+
+    // No existing YT leaf — open (or create) one on the right
+    const right = this.app.workspace.getRightLeaf(false) || this.app.workspace.getRightLeaf(true);
+    if (!right) return; // Safety — should never happen, but TS is happy
+
+    await right.setViewState({
+      type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
+      state: { videoId },
+      active: true,
+    });
+    this.app.workspace.revealLeaf(right);
+
   })
 );
+
   this.app.workspace.onLayoutReady(async () => {
     const file = this.app.workspace.getActiveFile();
     if (!(file instanceof TFile)) return;
@@ -74,131 +160,19 @@ public async activateView(videoId?: string) {
     if (vid) await this.activateView(vid);
   });
 
-//===================== READING MODE HANDLER =======================
-// const anchorPrefix = `#${SAVED_TIME_ANCHOR_PREFIX}`;
+ 
+ //===================== AUTO-PAUSE DURING NOTE TAKING  ======================= 
 
-// const readingClickHandler = async (event: MouseEvent) => {
-//   //Run ONLY when the active Markdown view is in Reading mode
-//   const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
-//   if (!mv || mv.getMode() !== "preview") return;
-
-//   // Allow modifier keys to bypass
-//   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-//   const a = (event.target as HTMLElement)?.closest?.("a") as HTMLAnchorElement | null;
-//   if (!a) return;
-
-//   const href = (a.getAttribute("href") || a.getAttribute("data-href") || "").trim();
-//   if (!href.startsWith(`#${SAVED_TIME_ANCHOR_PREFIX}`)) return;
-
-//   event.preventDefault();
-//   event.stopPropagation();
-//   (event as any).stopImmediatePropagation?.();
-
-//   const seconds = Number(href.slice(1 + SAVED_TIME_ANCHOR_PREFIX.length));
-//   if (!Number.isFinite(seconds)) return;
-
-//   const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
-//   const view = leaf?.view as YouTubeView | undefined;
-
-//   if (view?.playerWrapper?.isPlayerReady()) {
-//     view.playerWrapper.seekTo(seconds, true);
-//     new Notice(`To ${formatHMS(seconds)}`);
-//   } else {
-//     new Notice("Player not ready || open.");
-//   }
-// };
-
-
-// // Capture phase so we beat default anchor behavior
-// this.app.workspace.containerEl.addEventListener("click", readingClickHandler, true);
-// this.register(() =>
-//   this.app.workspace.containerEl.removeEventListener("click", readingClickHandler, true)
-// );
-
-// //===================== LIVE PREVIEW / SOURCE MODE HANDLER =======================
-// const anchorPrefixLP = `#${SAVED_TIME_ANCHOR_PREFIX}`;
-
-// function pickHrefFromDom(e: MouseEvent): string | null {
-//   const path = (e.composedPath?.() ?? []) as HTMLElement[];
-//   for (const node of path) {
-//     if (!(node instanceof HTMLElement)) continue;
-//     if (node.tagName === "A") {
-//       const h = node.getAttribute("href") || node.getAttribute("data-href");
-//       if (h) return h.trim();
-//     }
-//     const dh = node.getAttribute?.("data-href");
-//     if (dh) return dh.trim();
-//   }
-//   const a = (e.target as HTMLElement)?.closest?.("a") as HTMLAnchorElement | null;
-//   return a ? (a.getAttribute("href") || a.getAttribute("data-href") || "").trim() : null;
-// }
-
-// function pickSecondsFromText(e: MouseEvent, view: EditorView, prefix: string): number | null {
-//   const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
-//   if (pos == null) return null;
-//   const line = view.state.doc.lineAt(pos);
-//   const rel = pos - line.from;
-//   const text = line.text;
-
-//   const re = new RegExp(`${prefix.replace("#", "\\#")}(\\d+)`, "g");
-//   let m: RegExpExecArray | null;
-//   while ((m = re.exec(text)) !== null) {
-//     const start = m.index, end = start + m[0].length;
-//     if (rel >= start && rel <= end) {
-//       const secs = Number(m[1]);
-//       return Number.isFinite(secs) ? secs : null;
-//     }
-//   }
-//   return null;
-// }
-
-// const handleLP = (e: MouseEvent, view: EditorView): boolean => {
-//   // Ensure we’re actually in a Markdown editor (LP/Source)
-//   const mv = this.app.workspace.getActiveViewOfType(MarkdownView);
-//   if (!mv) return false;
-
-//   // Let modifier keys bypass
-//   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
-
-//   let seconds: number | null = null;
-//   const href = pickHrefFromDom(e);
-
-//   if (href?.startsWith(anchorPrefixLP)) {
-//     seconds = Number(href.slice(anchorPrefixLP.length));
-//   } else {
-//     seconds = pickSecondsFromText(e, view, anchorPrefixLP); // inline markdown case
-//   }
-//   if (seconds == null) return false;
-
-//   e.preventDefault();
-//   e.stopPropagation();
-//   (e as any).stopImmediatePropagation?.();
-
-//   const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
-//   const yt = leaf?.view as YouTubeView | undefined;
-//   if (yt?.playerWrapper?.isPlayerReady()) {
-//     yt.playerWrapper.seekTo(seconds, true);
-//     new Notice(`To ${formatHMS(seconds)}`);
-//   } else {
-//     new Notice(`Play in view & try again.`);
-//   }
-//   return true;
-// };
-
-// this.registerEditorExtension(
-//   Prec.highest(
-//     EditorView.domEventHandlers({
-//       click: (e, view) => handleLP(e, view),
-//       mousedown: (e, view) => handleLP(e, view),
-//       auxclick: (e, view) => handleLP(e, view),
-//     })
-//   )
-// );
-
+  
 // Register Reading-mode and LP handlers
   const lpExtension = registerTimestampHandlers(this.app, (dispose) => this.register(dispose));
   this.registerEditorExtension(lpExtension);
+
+
+  registerTypingPauseResume(this.app, this.settings, (cb) => this.register(cb))
+
+  const ytExternalLink = registerYouTubeLinkHandlers(this.app, (cb) => this.register(cb));
+  this.registerEditorExtension(ytExternalLink);
 
 //===================== INITIALIZE PLUGIN =======================
   this.addSettingTab(new YoutubeAnnotatorSettingTab(this.app, this));

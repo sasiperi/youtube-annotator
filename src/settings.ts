@@ -4,26 +4,42 @@ import { DateTimestampFormat } from "./utils/date-timestamp";
 import { FolderSuggest } from "./utils/FolderSuggest";
 import { FileSuggest } from "./utils/FileSuggest";
 import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
+import { registerTypingPauseResume } from "./utils/typingPauseResume";
+import { ScreenshotOptions } from "utils/captureScreenshot";
+
+export type ScreenshotFormat = "png" | "jpg"; // add "webp" later if desired
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
+	autoPauseOnTyping: boolean;
+	autoResumeAfterTyping: boolean;
+	autoResumeDelay: number;
 	useDefaultStructure: boolean;
 	enableTranscript: boolean;
 	defaultPlaybackSpeed: number;
 	lastUsedUrl: string;
+// Default folder names
 	notesFolder: string;              	
 	templateFolder: string;
-	screenshotFolder: string;   
 	mediaFolder: string;
 	templateFile: string;
 	filenamePrefix: string;
+
 	timestampFormat: DateTimestampFormat;
 	devMode: Boolean; 
+	// Settings pertains to Screenshots
+	screenshotFolder: string;
+	enableScreenCapture: boolean;
+  	screenshotFormat: ScreenshotFormat;
+	reuseLastRegion: boolean;   
 }
 
 
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
+	autoPauseOnTyping: true,
+	autoResumeAfterTyping: false,
+	autoResumeDelay: 1,
 	useDefaultStructure: false,
 	enableTranscript: false,
 	defaultPlaybackSpeed: 1.0,
@@ -38,6 +54,9 @@ export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
 	filenamePrefix: "YT_",
 	timestampFormat: DateTimestampFormat.Compact,        
 	
+	enableScreenCapture: false,
+  	screenshotFormat: "png",
+	reuseLastRegion: false,   
 	devMode: false,                                      
 };
 
@@ -57,8 +76,8 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE BOOLEAN =========================================
 	new Setting(containerEl)
-	.setName("Use default folder structure")
-	.setDesc("Creates folders and template file under 'YouTube-Annotator/'. Recommended for new users.")
+	.setName("Default folder structure")
+	.setDesc("Creates folders and template file under 'YouTube-Annotator'. Recommended for new users.")
 	.addToggle((toggle) =>
 		toggle
 		.setValue(this.plugin.settings.useDefaultStructure ?? false)
@@ -68,25 +87,108 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 
 			if (value) {
 			await initializeDefaultStructure(this.app, this.plugin);
-			new Notice ( "Default folder structure created.");
+			new Notice ( "Default folders created.");
 			}
 		})
 	);
 
-
 ////============ FUTURE FEATURE ==================================================
 
-	new Setting(containerEl)
-		.setName("Enable Transcript")
-		.setDesc("Future feature placeholder - Show transcript automatically if available")
-		.addToggle(toggle =>
-			toggle
-				.setValue(this.plugin.settings.enableTranscript)
-				.onChange(async (value) => {
-					this.plugin.settings.enableTranscript = value;
-					await this.plugin.saveSettings();
-				})
-		);
+	// new Setting(containerEl)
+	// 	.setName("Enable Transcript")
+	// 	.setDesc("Future feature placeholder - Show transcript automatically if available")
+	// 	.addToggle(toggle =>
+	// 		toggle
+	// 			.setValue(this.plugin.settings.enableTranscript)
+	// 			.onChange(async (value) => {
+	// 				this.plugin.settings.enableTranscript = value;
+	// 				await this.plugin.saveSettings();
+	// 			})
+	// 	);
+////============ AUTO-RESUME AFTER PLAYING ==================================================
+// --- Auto‑resume after typing (toggle) – you already have this ---
+new Setting(containerEl)
+  .setName("Auto‑resume after typing")
+  .setDesc("Resume playback after you stop typing.")
+  .addToggle(t =>
+    t.setValue(this.plugin.settings.autoResumeAfterTyping)
+     .onChange(async (v) => {
+       this.plugin.settings.autoResumeAfterTyping = v;
+       await this.plugin.saveSettings();
+     })
+  );
+
+// --- Auto‑resume delay (slider + numeric input, synced) ---
+const MIN_SEC = 1;
+const MAX_SEC = 30;
+
+const delaySetting = new Setting(containerEl)
+  .setName("Auto‑resume delay")
+  .setDesc("How many seconds after your last keystroke to resume playback.");
+
+const row = delaySetting.controlEl.createDiv({ cls: "yt-delay-row" });
+
+// Slider
+const slider = row.createEl("input", { type: "range" });
+slider.min = String(MIN_SEC);
+slider.max = String(MAX_SEC);
+slider.step = "1";
+slider.value = String(this.plugin.settings.autoResumeDelay ?? 2);
+slider.style.marginRight = "0.75rem";
+
+// Number input
+const num = row.createEl("input", { type: "number" });
+num.min = String(MIN_SEC);
+num.max = String(MAX_SEC);
+num.step = "1";
+num.value = String(this.plugin.settings.autoResumeDelay ?? 2);
+num.style.width = "4.5rem";
+
+// Small live label (optional)
+const label = row.createEl("span", { text: ` ${slider.value}s` });
+label.style.marginLeft = "0.5rem";
+label.style.opacity = "0.8";
+
+// Helper to clamp & normalize
+const clampSeconds = (v: unknown) => {
+  const n = Math.floor(Number(v));
+  if (!Number.isFinite(n)) return MIN_SEC;
+  return Math.min(MAX_SEC, Math.max(MIN_SEC, n));
+};
+
+const applyValue = async (val: number) => {
+  const clamped = clampSeconds(val);
+  slider.value = String(clamped);
+  num.value = String(clamped);
+  label.setText(` ${clamped}s`);
+  this.plugin.settings.autoResumeDelay = clamped;
+  await this.plugin.saveSettings();
+};
+
+// Events (two‑way sync)
+slider.addEventListener("input", async () => {
+  await applyValue(slider.valueAsNumber);
+});
+
+// Update on typing and on blur/enter
+num.addEventListener("input", async () => {
+  // Don’t commit on every keystroke if empty; just update label/slider when valid
+  const v = num.value.trim();
+  if (v === "") return;
+  await applyValue(Number(v));
+});
+num.addEventListener("change", async () => {
+  await applyValue(Number(num.value));
+});
+num.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    await applyValue(Number(num.value));
+    (e.target as HTMLInputElement).blur();
+  }
+});
+
+
 ////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
 		.setName("Default Playback Speed")
@@ -131,7 +233,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			new FileSuggest(this.app, text.inputEl);
 		});
 
-////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
+////============ ADD PREFIX TO THE NOTE FILENAME ========================================
 	new Setting(containerEl)
 		.setName("Filename Prefix")
 		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
@@ -175,6 +277,59 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 			await this.plugin.saveSettings();
           })
       );
+
+
+new Setting(containerEl)
+  .setName("Enable screen capture")
+  .setDesc("Use OS snipping tool (Win) or screencapture (mac) and insert at cursor.")
+  .addToggle((toggle) => toggle
+    .setValue(this.plugin.settings.enableScreenCapture)
+    .onChange(async (value) => {
+      this.plugin.settings.enableScreenCapture = value;
+      await this.plugin.saveSettings();
+    })
+  );
+
+  // ================ REUSE LAST REGION EXPERIMENTAL ===================
+// new Setting(containerEl)
+//   .setName("Last captured region")
+//   .setDesc("Experimental - Windows only")
+//   .addToggle((toggle) => toggle
+//     .setValue(this.plugin.settings.reuseLastRegion)
+//     .onChange(async (value) => {
+//       this.plugin.settings.reuseLastRegion = value;
+//       await this.plugin.saveSettings();
+//     })
+//   );
+
+new Setting(containerEl)
+  .setName("Screenshot folder")
+  .setDesc("Vault-relative path for saved screenshots.")
+  .addText((toggle) => toggle
+    .setPlaceholder("YouTube-Annotator/screenshots")
+    .setValue(this.plugin.settings.screenshotFolder)
+    .onChange(async (value) => {
+      this.plugin.settings.screenshotFolder = value || "YouTube-Annotator/screenshots";
+      await this.plugin.saveSettings();
+    })
+  );
+
+new Setting(containerEl)
+  .setName("Image format")
+  .setDesc("Format used when saving screenshots.")
+  .addDropdown((dropdown) =>
+    dropdown
+      .addOptions({
+        png: "PNG",
+        jpg: "JPEG",
+      })
+      .setValue(this.plugin.settings.screenshotFormat) 
+      .onChange(async (value) => {
+        this.plugin.settings.screenshotFormat = value as ScreenshotFormat; 
+        await this.plugin.saveSettings();
+      })
+  );
+
 
 //============ BUY ME COFFEE ==================================================
 		containerEl.createEl("hr");

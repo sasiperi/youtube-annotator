@@ -6,6 +6,7 @@ import {
 } from "./constants";
 import { formatHMS } from "../src/utils/Time"
 import {YouTubeView} from "./views/YouTubeView"
+import { captureScreenshot } from "utils/captureScreenshot";
 
 export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
 
@@ -75,8 +76,69 @@ plugin.addCommand({
       }
     },
   });
+// === Toggle playback (hotkey-friendly) ===
+plugin.addCommand({
+  id: "toggle-playback",
+  name: "Toggle playback",
+  callback: () => {
+    const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
+    const view = leaf?.view as YouTubeView | undefined;
+    if (!view?.playerWrapper?.isPlayerReady()) {
+      new Notice("Player not ready", 2000);
+      return;
+    }
+    const state = view.playerWrapper.getState(); // 1=playing, 2=paused
+    if (state === 1) view.playerWrapper.pause();
+    else view.playerWrapper.play();
+  },
+});
+   //=================== CAPTURE REGION FOR SCREENSHOT ==========================  
+  
+   plugin.addCommand({
+    id: "capture-youtube-screenshot",
+    name: "Capture screenshot → insert at cursor",
+    callback: async () => {
+      if (!plugin.settings.enableScreenCapture) {
+        new Notice("Screen capture is disabled in settings.", 2000);
+        return;
+      }
+      try {
+        await captureScreenshot(plugin.app, {
+          folder: plugin.settings.screenshotFolder,
+          format: plugin.settings.screenshotFormat,
+          timestampFmt: plugin.settings.timestampFormat, // reuse your existing setting
+        });
+      } catch (err) {
+        console.error(err);
+        new Notice("Screenshot failed. See console for details.", 2500);
+      }
+    },
+  });
 
-  //  =================== PLACE HOLDER FOR FUTURE COMMAND #1 ==========================
+
+//=================== REUSE LAST CAPTURE REGION FOR NEXT CAPTURE EXPERIMENTAL ==========================  
+// plugin.addCommand({
+//   id: "screenshot-capture-reuse-region",
+//   name: "Capture - last region if available)",
+//   callback: async () => {
+//     if (!plugin.settings.enableScreenCapture) {
+//       new Notice("Enable screen capture in settings first.", 2000);
+//       return;
+//     }
+//     try {
+//       await captureScreenshot(plugin.app, {
+//         folder: plugin.settings.screenshotFolder,
+//         format: plugin.settings.screenshotFormat,
+//         timestampFmt: plugin.settings.timestampFormat,
+        
+//         reuseLastRegion: plugin.settings.reuseLastRegion,
+//       } as any); 
+//     } catch (e) {
+//       console.error(e);
+//       new Notice("Screenshot failed. See console for details.", 2500);
+//     }
+//   },
+// });
   
   //  =================== PLACE HOLDER FOR FUTURE COMMAND #2 ==========================
 }
