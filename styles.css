@@ -51,3 +51,18 @@ a[href^="#go2saved-"], a[href^="ytstamp://"] {
   display: flex;
   align-items: center;
 }
+/* Settings UI tweaks to address comments 1 to 4 */
+.yt-setting-slider {
+  margin-right: 0.75rem;
+}
+.yt-setting-num {
+  width: 4.5rem;
+}
+.yt-setting-label {
+  margin-left: 0.5rem;
+  opacity: 0.8;
+}
+/* Settings UI tweaks to address comment # 5 */
+.yt-url-input {
+  width: 100%;
+}
