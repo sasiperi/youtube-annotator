@@ -26,7 +26,7 @@ export class YoutubePromptModal extends Modal {
       type: "text",
       placeholder: "Paste https://youtube.com/... link here",
     });
-    inputEl.style.width = "100%";
+    inputEl.classList.add("yt-url-input");
     inputEl.focus();
 
     // Handle Enter key
