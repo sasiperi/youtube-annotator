@@ -134,7 +134,7 @@ slider.min = String(MIN_SEC);
 slider.max = String(MAX_SEC);
 slider.step = "1";
 slider.value = String(this.plugin.settings.autoResumeDelay ?? 2);
-slider.style.marginRight = "0.75rem";
+slider.classList.add("yt-setting-slider");
 
 // Number input
 const num = row.createEl("input", { type: "number" });
@@ -142,12 +142,12 @@ num.min = String(MIN_SEC);
 num.max = String(MAX_SEC);
 num.step = "1";
 num.value = String(this.plugin.settings.autoResumeDelay ?? 2);
-num.style.width = "4.5rem";
+num.classList.add("yt-setting-num");
 
 // Small live label (optional)
 const label = row.createEl("span", { text: ` ${slider.value}s` });
-label.style.marginLeft = "0.5rem";
-label.style.opacity = "0.8";
+label.classList.add("yt-setting-label");
+label.classList.add("yt-setting-label");
 
 // Helper to clamp & normalize
 const clampSeconds = (v: unknown) => {

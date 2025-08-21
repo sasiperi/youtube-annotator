@@ -1,5 +1,5 @@
 // src/utils/captureScreenshot.ts
-import { App, Notice, MarkdownView, normalizePath, FileSystemAdapter } from "obsidian";
+import { App, Notice, MarkdownView, normalizePath, FileSystemAdapter,Platform } from "obsidian";
 import { generateDateTimestamp, DateTimestampFormat } from "../utils/date-timestamp";
 import type { Buffer } from "buffer";
 
@@ -99,11 +99,16 @@ function waitForNewClipboardImage(
 }
 
 
-const isMac = process.platform === "darwin";
-const isWin = process.platform === "win32";
+const isMac = Platform.isMacOS;
+const isWin = Platform.isWin;
 
 // ============ BUTTON MAIN ENTRY ===============
 export async function captureScreenshot(app: App, opts: ScreenshotOptions): Promise<void> {
+  if (!Platform.isDesktopApp) {
+    new Notice("Screenshots are only supported on desktop.", 2500);
+    return;
+  }
+
   const folder = normalizePath(opts.folder);
   await ensureFolder(app, folder);
 
@@ -118,17 +123,18 @@ export async function captureScreenshot(app: App, opts: ScreenshotOptions): Prom
   }
 
   try {
-    if (isMac) {
+    if (Platform.isMacOS) {
       await captureOnMac(absPath, opts.format);
-    } else if (isWin) {
-      await captureOnWindows(app, relPath, opts.format, !!opts.reuseLastRegion);
+    } else if (Platform.isWin) {
+      // pass through your reuseLastRegion flag (optional)
+      await captureOnWindows(app, relPath, opts.format, !!(opts as any).reuseLastRegion);
     } else {
-      new Notice("Screenshot: Unsupported OS (macOS/Windows only).", 2500);
+      new Notice("Screenshot: unsupported desktop OS.", 2500);
       return;
     }
 
     // Give Obsidian a tick to settle focus after the OS tool closes
-    await sleep(50);
+ await sleep(50);
     insertAtCursor(app, `![[${relPath}]]`);
     new Notice("Screenshot inserted", 1200);
   } catch (err) {
