@@ -73,7 +73,7 @@ export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
     containerEl.empty();
-		containerEl.createEl("h2", { text: "YouTube Annotator Settings" });
+		containerEl.createEl("h2", { text: "YouTube Annotator settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE BOOLEAN =========================================
 	new Setting(containerEl)
 	.setName("Default folder structure")
@@ -191,7 +191,7 @@ num.addEventListener("keydown", async (e) => {
 
 ////============ CHANGE PLAYBACK SPEED ==================================================
 	new Setting(containerEl)
-		.setName("Default Playback Speed")
+		.setName("Default playback speed")
 		.setDesc("Set the default playback speed for your YouTube videos")
 		.addSlider(slider =>
 			slider
@@ -205,7 +205,7 @@ num.addEventListener("keydown", async (e) => {
 		);
 ////============ SUGGEST FOLDER PATH ==================================================
 	new Setting(containerEl)
-		.setName("Template Folder")
+		.setName("Template folder")
 		.setDesc("Folder where your note templates are stored")
 		.addText((text) => {
 			text
@@ -219,7 +219,7 @@ num.addEventListener("keydown", async (e) => {
 		});
 ////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION =======================================
 	new Setting(containerEl)
-		.setName("Template File Path")
+		.setName("Template file path")
 		.setDesc("Select the default note template (.md)")
 		.addText((text) => {
 			text
@@ -235,7 +235,7 @@ num.addEventListener("keydown", async (e) => {
 
 ////============ ADD PREFIX TO THE NOTE FILENAME ========================================
 	new Setting(containerEl)
-		.setName("Filename Prefix")
+		.setName("Filename prefix")
 		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
 		.addText((text) => {
 			text
@@ -259,7 +259,7 @@ num.addEventListener("keydown", async (e) => {
 
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
 	new Setting(containerEl)
-      .setName("Add Date-Timestamp")
+      .setName("Add date-timestamp")
       .setDesc("Date timestamp added at the end of new note creation")
 	  .addDropdown((dropdown) =>
 		dropdown
@@ -332,23 +332,37 @@ new Setting(containerEl)
 
 
 //============ BUY ME COFFEE ==================================================
-		containerEl.createEl("hr");
-		containerEl.createEl("div", { text: "☕ Like this plugin? Support my work!" });
-
-		const coffeeLink = containerEl.createEl("a", {
-		text: "Buy Me a ☕ Coffee",
-		href: "https://github.com/sponsors/sasiperi?frequency=one-time",
+		const footer = containerEl.createDiv({ cls: "yt-settings-footer" });
+		footer.createEl("div", { text: "Like this plugin? Support my work." });
+		// Buy Me a Coffee
+		const coffeeLink = footer.createEl("a", {
+		text: "Buy me a ☕ coffee",
+		href: "https://www.buymeacoffee.com/YOURUSERNAME", // <-- update your handle
 		});
-		coffeeLink.setAttribute("target", "_blank");
-		coffeeLink.setAttribute("style", "color: var(--text-accent); font-weight: bold;");
+		coffeeLink.setAttr("target", "_blank");
+		coffeeLink.addClass("yt-link");
 
-		containerEl.createEl("hr");
-		containerEl.createEl("div", { text: "Have improvement suggestions? Contact Us through our webpage" });
-		const companyLink = containerEl.createEl("a", {
-		text: "Visit my Website",
+		// Separator
+		footer.createEl("span", { text: "  •  " });
+
+		// GitHub Sponsors
+		const sponsorsLink = footer.createEl("a", {
+		text: "GitHub sponsors",
+		href: "https://github.com/sponsors/sasiperi",
+		});
+		sponsorsLink.setAttr("target", "_blank");
+		sponsorsLink.addClass("yt-link");
+
+		// Separator
+		footer.createEl("span", { text: "  •  " });
+
+
+		// Personal website
+		const websiteLink = footer.createEl("a", {
+		text: "Visit my website",
 		href: "https://fourthquest.com/",
 		});
-		companyLink.setAttribute("target", "_blank");
-		companyLink.setAttribute("style", "color: var(--text-accent); font-weight: bold;");
+		websiteLink.setAttr("target", "_blank");
+		websiteLink.addClass("yt-link");
 	}
 }

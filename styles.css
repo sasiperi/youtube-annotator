@@ -66,3 +66,22 @@ a[href^="#go2saved-"], a[href^="ytstamp://"] {
 .yt-url-input {
   width: 100%;
 }
+.yt-link {
+  color: var(--text-accent);
+  font-weight: var(--font-semibold, 600);
+  text-decoration: none;
+}
+.yt-link:hover {
+  text-decoration: underline;
+}
+
+/* Settings footer layout */
+.yt-settings-footer {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  opacity: 0.95;
+  font-size: 0.95em;
+}
