@@ -19,8 +19,6 @@ export class PlayerWrapper {
   }
 
   private bindEvents() {
-    // Wrap native handlers and delegate
-    const oldOnReady = this.player.getIframe().onload;
 
     this.player.addEventListener("onReady", () => {
       this.isReady = true;
@@ -83,9 +81,10 @@ export class PlayerWrapper {
 
 
 
-  destroy() {
-    if (typeof (this.player as any).destroy === "function") {
-      (this.player as any).destroy();
+    destroy() {
+    const p = this.player as YT.Player & { destroy?: () => void };
+    if (typeof p.destroy === "function") {
+      p.destroy();
     }
   }
 }

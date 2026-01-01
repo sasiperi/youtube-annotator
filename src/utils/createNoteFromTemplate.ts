@@ -1,5 +1,5 @@
 // utils/createNoteFromTemplate.ts is used for creating YT notes based on template
-import { App, Notice, TFile, normalizePath,moment } from "obsidian";
+import { App, Notice, TFile, normalizePath } from "obsidian";
 import { YoutubeAnnotatorSettings } from "../settings";
 import { generateNoteFilename } from "../utils/generateFilenames";
 import { generateDateTimestamp } from "./date-timestamp";
@@ -27,8 +27,7 @@ export async function createNoteFromTemplate(
       return;
     }
   } catch (err) {
-    //console.warn("Error reading template file:", err);
-    new Notice("Could not read template file. See console for details.");
+    console.warn("Error reading template file:", err);
     return;
   }
 
@@ -54,7 +53,6 @@ export async function createNoteFromTemplate(
       new Notice("Note created but could not open it.");
     }
   } catch (err) {
-    //console.error("Failed to create note:", err);
-    new Notice("Failed to create note. See console for details.");
+    console.error("Failed to create note:", err);  
   }
 } // utils/createNoteFromTemplate.ts 

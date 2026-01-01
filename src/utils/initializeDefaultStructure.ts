@@ -1,7 +1,21 @@
 // utils/initializeDefaultStructure.ts
-import { App, normalizePath, TFile } from "obsidian";
+import { App, normalizePath } from "obsidian";
 
-export async function initializeDefaultStructure(app: App, plugin: any) {
+type PluginWithSettings = {
+  settings: {
+    templateFolder: string;
+    templateFile: string;
+    notesFolder: string;
+    screenshotFolder: string;
+    mediaFolder: string;
+  };
+  saveSettings: () => Promise<void>;
+};
+
+export async function initializeDefaultStructure(
+  app: App,
+  plugin: PluginWithSettings
+): Promise<void> {
   const base = "YouTube-Annotator";
   const folders = ["notes", "templates", "screenshots", "media"];
 
@@ -36,7 +50,7 @@ videoTitle: "{{videoTitle}}"
 videoId:
   - "{{videoId}}"
 originalUrl: "{{originalUrl}}"
-created: "{{date}}"
+created: "{{createdISO}}"
 tags:
   - youtube
   - notes

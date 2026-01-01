@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Notice } from "obsidian";
+import {MarkdownView, Notice } from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
@@ -27,8 +27,6 @@ export function registerCommands(plugin: YoutubeAnnotatorPlugin) {
       return;
     }
     const time = Math.floor(view.playerWrapper.getCurrentTime());
-    const timestamp = formatHMS(time);
-    //const link = `[${timestamp}](${SAVED_TIME_LINK}://${time})`;
     const link = `[${formatHMS(time)}](#${SAVED_TIME_ANCHOR_PREFIX}${time})`;
 
     await navigator.clipboard.writeText(link);
