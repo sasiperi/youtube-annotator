@@ -1,11 +1,7 @@
 // main.ts starts here 
-import { Plugin, App, WorkspaceLeaf, Notice, parseYaml, TFolder, normalizePath, MarkdownView, TFile, addIcon } from "obsidian";
+import { Plugin, WorkspaceLeaf, Notice, MarkdownView, TFile, addIcon } from "obsidian";
 import {
   VIEW_TYPE_YOUTUBE_ANNOTATOR,
-  //VIEW_TYPE_YOUTUBE_PLAYER,
-  //VIEW_TYPE_YOUTUBE_SPLIT,
-  PLUGIN_ID,
-  SAVED_TIME_ANCHOR_PREFIX,
 } from "./constants";
 import {
   YoutubeAnnotatorSettingTab,
@@ -16,15 +12,15 @@ import { YouTubeView } from "./views/YouTubeView";
 import { registerCommands } from "./commands";
 import { YoutubePromptModal } from "./modal/YoutubePromptModal";
 import { createNoteFromTemplate } from "./utils/createNoteFromTemplate";
-import { generateDateTimestamp } from "./utils/date-timestamp";
-import { formatHMS } from "../src/utils/Time";
-import { EditorView } from "@codemirror/view";
-import { Prec } from "@codemirror/state";
 import { extractVideoIdFromFrontmatter } from "./utils/extractVideoId";
 import { registerTimestampHandlers } from "./utils/timestamphandlers"
 import { registerTypingPauseResume } from "./utils/typingPauseResume";
 import { registerYouTubeLinkHandlers } from "./utils/youtubeLinkHandlers";
 
+type PinnedLeaf = WorkspaceLeaf & { pinned: boolean };
+function isPinnedLeaf(leaf: WorkspaceLeaf): leaf is PinnedLeaf {
+  return "pinned" in leaf;
+}
 
 export default class YoutubeAnnotatorPlugin extends Plugin {
   settings: YoutubeAnnotatorSettings = DEFAULT_SETTINGS;
@@ -51,7 +47,7 @@ private getOrCreateYouTubeLeaf(preferPinned = true): WorkspaceLeaf | null {
   const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR);
   if (leaves.length) {
     if (preferPinned) {
-      const pinned = leaves.find((l) => (l as any).pinned);
+      const pinned = leaves.find((l) => isPinnedLeaf(l) && l.pinned);
       if (pinned) return pinned;
     }
     return leaves[0];
@@ -116,7 +112,7 @@ addIcon(
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
     if (existing) {
       // …and it’s pinned, leave it alone (keep size/minimized state)
-      if ((existing as any).pinned) return;
+      if (isPinnedLeaf(existing) && existing.pinned) return;
 
       // Otherwise, reuse the leaf and just swap the videoId
       await existing.setViewState({
@@ -203,7 +199,7 @@ addIcon(
         );
         //console.log("Note created successfully");
       } catch (err) {
-        //console.error("Failed to create note:", err);
+        console.error("Failed to create note:", err);
         new Notice("Note creation failed. Check template path or folder.");
       }
 

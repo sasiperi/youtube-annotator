@@ -1,4 +1,4 @@
-// src/utils/typingPauseResume.ts  (or src/handlers/typingPauseResume.ts)
+// src/utils/timestamphandlers.ts
 import { App, MarkdownView } from "obsidian";
 import { VIEW_TYPE_YOUTUBE_ANNOTATOR } from "../constants";
 import { YouTubeView } from "../views/YouTubeView";
@@ -8,6 +8,20 @@ export interface TypingPauseResumeSettings {
   autoResumeAfterTyping: boolean;
   autoResumeDelay: number; // seconds
 }
+
+type PlayerWrapperLike = {
+  isPlayerReady: () => boolean;
+
+  // state getters (either naming)
+  getPlayerState?: () => number;
+  getState?: () => number;
+
+  // pause/play (either naming)
+  pauseVideo?: () => void;
+  pause?: () => void;
+  playVideo?: () => void;
+  play?: () => void;
+};
 
 export function registerTypingPauseResume(
   app: App,
@@ -29,22 +43,24 @@ export function registerTypingPauseResume(
 
     const leaf = app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR)?.[0];
     const view = leaf?.view as YouTubeView | undefined;
-    const pw = view?.playerWrapper;
+    const pw = view?.playerWrapper as PlayerWrapperLike | undefined;
     if (!pw?.isPlayerReady()) return;
 
     // Wrapper helpers that do not use ?? on void-returning methods
     const getState = (): number | undefined => {
-      if (typeof (pw as any).getPlayerState === "function") return (pw as any).getPlayerState();
-      if (typeof (pw as any).getState === "function") return (pw as any).getState();
+      if (typeof pw.getPlayerState === "function") return pw.getPlayerState();
+      if (typeof pw.getState === "function") return pw.getState();
       return undefined;
     };
+
     const pause = (): void => {
-      if (typeof (pw as any).pauseVideo === "function") (pw as any).pauseVideo();
-      else if (typeof (pw as any).pause === "function") (pw as any).pause();
+      if (typeof pw.pauseVideo === "function") pw.pauseVideo();
+      else if (typeof pw.pause === "function") pw.pause();
     };
+
     const play = (): void => {
-      if (typeof (pw as any).playVideo === "function") (pw as any).playVideo();
-      else if (typeof (pw as any).play === "function") (pw as any).play();
+      if (typeof pw.playVideo === "function") pw.playVideo();
+      else if (typeof pw.play === "function") pw.play();
     };
 
     // Auto-pause immediately if typing while playing
@@ -69,6 +85,7 @@ export function registerTypingPauseResume(
           wasPlayingBeforeType = false;
           return;
         }
+
         const st = getState();
         if (st === 2 && wasPlayingBeforeType) {
           play();

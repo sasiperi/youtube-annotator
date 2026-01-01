@@ -5,17 +5,19 @@
 
 .youtube-video-wrapper {
   width: 100%;
-  /* no fixed aspect ratio */
+  aspect-ratio: 16 / 9;       /* proportional height from width */
+  max-height: 70vh;           /* don’t take the whole screen */
+  /* optionally: max-height: 600px; */
 }
 
 .youtube-video-wrapper > iframe,
 .youtube-video-wrapper > #yt-player {
-  display: block;
   width: 100%;
-  /* Fill width, cap height at 400px, but allow shrinking on small screens */
-  height: min(300px, 50vh);
+  height: 100%;
   border: 0;
+  display: block;
 }
+
 
 /* Toolbar */
 .yt-toolbar {

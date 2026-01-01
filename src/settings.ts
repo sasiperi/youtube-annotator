@@ -1,110 +1,110 @@
-import { App, Notice, PluginSettingTab, Setting, TAbstractFile, TFolder} from "obsidian";
+import { App, Notice, PluginSettingTab, Setting} from "obsidian";
 import type YoutubeAnnotatorPlugin from "./main";
 import { DateTimestampFormat } from "./utils/date-timestamp";
 import { FolderSuggest } from "./utils/FolderSuggest";
 import { FileSuggest } from "./utils/FileSuggest";
 import { initializeDefaultStructure } from "./utils/initializeDefaultStructure";
-import { registerTypingPauseResume } from "./utils/typingPauseResume";
-import { ScreenshotOptions } from "utils/captureScreenshot";
+//import { registerTypingPauseResume } from "./utils/typingPauseResume";
+//import { ScreenshotOptions } from "utils/captureScreenshot";
 
 export type ScreenshotFormat = "png" | "jpg"; // add "webp" later if desired
 
 // Define the shape of your plugin settings
 export interface YoutubeAnnotatorSettings {
-	autoPauseOnTyping: boolean;
-	autoResumeAfterTyping: boolean;
-	autoResumeDelay: number;
-	useDefaultStructure: boolean;
-	enableTranscript: boolean;
-	defaultPlaybackSpeed: number;
-	lastUsedUrl: string;
+    autoPauseOnTyping: boolean;
+    autoResumeAfterTyping: boolean;
+    autoResumeDelay: number;
+    useDefaultStructure: boolean;
+    enableTranscript: boolean;
+    defaultPlaybackSpeed: number;
+    lastUsedUrl: string;
 // Default folder names
-	notesFolder: string;              	
-	templateFolder: string;
-	mediaFolder: string;
-	templateFile: string;
-	filenamePrefix: string;
+    notesFolder: string;              	
+    templateFolder: string;
+    mediaFolder: string;
+    templateFile: string;
+    filenamePrefix: string;
 
-	timestampFormat: DateTimestampFormat;
-	devMode: Boolean; 
-	// Settings pertains to Screenshots
-	screenshotFolder: string;
-	enableScreenCapture: boolean;
-  	screenshotFormat: ScreenshotFormat;
-	reuseLastRegion: boolean;   
+    timestampFormat: DateTimestampFormat;
+    devMode: boolean; 
+    // Settings pertains to Screenshots
+    screenshotFolder: string;
+    enableScreenCapture: boolean;
+    screenshotFormat: ScreenshotFormat;
+    reuseLastRegion: boolean;   
 }
 
 
 // Default values for your plugin settings
 export const DEFAULT_SETTINGS: YoutubeAnnotatorSettings = {
-	autoPauseOnTyping: true,
-	autoResumeAfterTyping: false,
-	autoResumeDelay: 1,
-	useDefaultStructure: false,
-	enableTranscript: false,
-	defaultPlaybackSpeed: 1.0,
-	lastUsedUrl: "",
+    autoPauseOnTyping: true,
+    autoResumeAfterTyping: false,
+    autoResumeDelay: 1,
+    useDefaultStructure: false,
+    enableTranscript: false,
+    defaultPlaybackSpeed: 1.0,
+    lastUsedUrl: "",
 
-	notesFolder: "YouTube-Annotator/notes",              	
-	templateFolder: "YouTube-Annotator/templates",      
-	screenshotFolder: "YouTube-Annotator/screenshots",   
-	mediaFolder: "YouTube-Annotator/media",              
-	
-	templateFile: "YouTube-Annotator/templates/youtube_template.md",
-	filenamePrefix: "YT_",
-	timestampFormat: DateTimestampFormat.Compact,        
-	
-	enableScreenCapture: false,
-  	screenshotFormat: "png",
-	reuseLastRegion: false,   
-	devMode: false,                                      
+    notesFolder: "YouTube-Annotator/notes",              	
+    templateFolder: "YouTube-Annotator/templates",      
+    screenshotFolder: "YouTube-Annotator/screenshots",   
+    mediaFolder: "YouTube-Annotator/media",              
+    
+    templateFile: "YouTube-Annotator/templates/youtube_template.md",
+    filenamePrefix: "YT_",
+    timestampFormat: DateTimestampFormat.Compact,        
+
+    enableScreenCapture: false,
+      screenshotFormat: "png",
+    reuseLastRegion: false,   
+    devMode: false,                                      
 };
 
 
 // Settings tab UI for Obsidian’s plugin settings panel
 export class YoutubeAnnotatorSettingTab extends PluginSettingTab {
-	plugin: YoutubeAnnotatorPlugin;
+    plugin: YoutubeAnnotatorPlugin;
 
-	constructor(app: App, plugin: YoutubeAnnotatorPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    constructor(app: App, plugin: YoutubeAnnotatorPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
 
-	display(): void {
-		const { containerEl } = this;
+    display(): void {
+        const { containerEl } = this;
     containerEl.empty();
-		containerEl.createEl("h2", { text: "YouTube Annotator settings" });
+        containerEl.createEl("h2", { text: "YouTube Annotator settings" });
 ////============ USE DEFAULT FOLDER STRUCTURE BOOLEAN =========================================
-	new Setting(containerEl)
-	.setName("Default folder structure")
-	.setDesc("Creates folders and template file under 'YouTube-Annotator'. Recommended for new users.")
-	.addToggle((toggle) =>
-		toggle
-		.setValue(this.plugin.settings.useDefaultStructure ?? false)
-		.onChange(async (value) => {
-			this.plugin.settings.useDefaultStructure = value;
-			await this.plugin.saveSettings();
+    new Setting(containerEl)
+    .setName("Default folder structure")
+    .setDesc("Creates folders and template file under 'YouTube-Annotator'. Recommended for new users.")
+    .addToggle((toggle) =>
+        toggle
+        .setValue(this.plugin.settings.useDefaultStructure ?? false)
+        .onChange(async (value) => {
+            this.plugin.settings.useDefaultStructure = value;
+            await this.plugin.saveSettings();
 
-			if (value) {
-			await initializeDefaultStructure(this.app, this.plugin);
-			new Notice ( "Default folders created.");
-			}
-		})
-	);
+            if (value) {
+            await initializeDefaultStructure(this.app, this.plugin);
+            new Notice ( "Default folders created.");
+            }
+        })
+    );
 
 ////============ FUTURE FEATURE ==================================================
 
-	// new Setting(containerEl)
-	// 	.setName("Enable Transcript")
-	// 	.setDesc("Future feature placeholder - Show transcript automatically if available")
-	// 	.addToggle(toggle =>
-	// 		toggle
-	// 			.setValue(this.plugin.settings.enableTranscript)
-	// 			.onChange(async (value) => {
-	// 				this.plugin.settings.enableTranscript = value;
-	// 				await this.plugin.saveSettings();
-	// 			})
-	// 	);
+    // new Setting(containerEl)
+    // 	.setName("Enable Transcript")
+    // 	.setDesc("Future feature placeholder - Show transcript automatically if available")
+    // 	.addToggle(toggle =>
+    // 		toggle
+    // 			.setValue(this.plugin.settings.enableTranscript)
+    // 			.onChange(async (value) => {
+    // 				this.plugin.settings.enableTranscript = value;
+    // 				await this.plugin.saveSettings();
+    // 			})
+    // 	);
 ////============ AUTO-RESUME AFTER PLAYING ==================================================
 // --- Auto‑resume after typing (toggle) – you already have this ---
 new Setting(containerEl)
@@ -190,92 +190,92 @@ num.addEventListener("keydown", async (e) => {
 
 
 ////============ CHANGE PLAYBACK SPEED ==================================================
-	new Setting(containerEl)
-		.setName("Default playback speed")
-		.setDesc("Set the default playback speed for your YouTube videos")
-		.addSlider(slider =>
-			slider
-				.setLimits(0.25, 2.0, 0.25)
-				.setValue(this.plugin.settings.defaultPlaybackSpeed)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					this.plugin.settings.defaultPlaybackSpeed = value;
-					await this.plugin.saveSettings();
-				})
-		);
+    new Setting(containerEl)
+        .setName("Default playback speed")
+        .setDesc("Set the default playback speed for your YouTube videos")
+        .addSlider(slider =>
+            slider
+                .setLimits(0.25, 2.0, 0.25)
+                .setValue(this.plugin.settings.defaultPlaybackSpeed)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.defaultPlaybackSpeed = value;
+                    await this.plugin.saveSettings();
+                })
+        );
 ////============ SUGGEST FOLDER PATH ==================================================
-	new Setting(containerEl)
-		.setName("Template folder")
-		.setDesc("Folder where your note templates are stored")
-		.addText((text) => {
-			text
-			.setPlaceholder("e.g. Templates")
-			.setValue(this.plugin.settings.templateFolder)
-			.onChange(async (value) => {
-				this.plugin.settings.templateFolder = value;
-				await this.plugin.saveSettings();
-			});
-		new FolderSuggest(this.app, text.inputEl);
-		});
+    new Setting(containerEl)
+        .setName("Template folder")
+        .setDesc("Folder where your note templates are stored")
+        .addText((text) => {
+            text
+            .setPlaceholder("e.g. Templates")
+            .setValue(this.plugin.settings.templateFolder)
+            .onChange(async (value) => {
+                this.plugin.settings.templateFolder = value;
+                await this.plugin.saveSettings();
+            });
+        new FolderSuggest(this.app, text.inputEl);
+        });
 ////============ SUGGEST TEMPLATE ".MD" TO USE FOR NOTE CREATION =======================================
-	new Setting(containerEl)
-		.setName("Template file path")
-		.setDesc("Select the default note template (.md)")
-		.addText((text) => {
-			text
-			.setPlaceholder("Templates/youtube_template.md")
-			.setValue(this.plugin.settings.templateFile)
-			.onChange(async (value) => {
-				this.plugin.settings.templateFile = value;
-				await this.plugin.saveSettings();
-			});
+    new Setting(containerEl)
+        .setName("Template file path")
+        .setDesc("Select the default note template (.md)")
+        .addText((text) => {
+            text
+            .setPlaceholder("Templates/youtube_template.md")
+            .setValue(this.plugin.settings.templateFile)
+            .onChange(async (value) => {
+                this.plugin.settings.templateFile = value;
+                await this.plugin.saveSettings();
+            });
 
-			new FileSuggest(this.app, text.inputEl);
-		});
+            new FileSuggest(this.app, text.inputEl);
+        });
 
 ////============ ADD PREFIX TO THE NOTE FILENAME ========================================
-	new Setting(containerEl)
-		.setName("Filename prefix")
-		.setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
-		.addText((text) => {
-			text
-			.setPlaceholder("YT_")
-			.setValue(this.plugin.settings.filenamePrefix || "YT_")
-			.onChange(async (value) => {
-				// Trim spaces and replace invalid characters with underscores
-				const cleaned = value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
+    new Setting(containerEl)
+        .setName("Filename prefix")
+        .setDesc("Prefix for new note filenames (e.g., YT_). Only letters, numbers, underscores, and hyphens are allowed.")
+        .addText((text) => {
+            text
+            .setPlaceholder("YT_")
+            .setValue(this.plugin.settings.filenamePrefix || "YT_")
+            .onChange(async (value) => {
+                // Trim spaces and replace invalid characters with underscores
+                const cleaned = value.trim().replace(/[^A-Za-z0-9_-]/g, "_");
 
-				// If cleaning changed the input, update the field immediately
-				if (cleaned !== value) {
-				text.setValue(cleaned);
-				new Notice("Invalid characters replaced with underscores.");
-				}
+                // If cleaning changed the input, update the field immediately
+                if (cleaned !== value) {
+                text.setValue(cleaned);
+                new Notice("Invalid characters replaced with underscores.");
+                }
 
-				this.plugin.settings.filenamePrefix = cleaned;
-				await this.plugin.saveSettings();
-			});
-		});
+                this.plugin.settings.filenamePrefix = cleaned;
+                await this.plugin.saveSettings();
+            });
+        });
 
 
 ////============ ADD TIME-STAMP AT THE CURRENT CURSOR LOCATION ========================================
-	new Setting(containerEl)
+    new Setting(containerEl)
       .setName("Add date-timestamp")
       .setDesc("Date timestamp added at the end of new note creation")
-	  .addDropdown((dropdown) =>
-		dropdown
-		.addOptions({
-			[DateTimestampFormat.Compact]: "YYYYMMDD-HHmmss",
-			[DateTimestampFormat.Underscore]: "YYYY_MM_DD_HH_mm_ss",
-			[DateTimestampFormat.ISO]: "ISO format",
-			[DateTimestampFormat.TimeOnly]: "Time only (HH-mm-ss)",
-			[DateTimestampFormat.Unix]: "Epoch (Unix)",
-			[DateTimestampFormat.None]: "None",
-		})
-          	.setValue(this.plugin.settings.timestampFormat)
-      		.onChange(async (value) => {
-			this.plugin.settings.timestampFormat = value as DateTimestampFormat;
-			await this.plugin.saveSettings();
-          })
+      .addDropdown((dropdown) =>
+        dropdown
+        .addOptions({
+            [DateTimestampFormat.Compact]: "YYYYMMDD-HHmmss",
+            [DateTimestampFormat.Underscore]: "YYYY_MM_DD_HH_mm_ss",
+            [DateTimestampFormat.ISO]: "ISO format",
+            [DateTimestampFormat.TimeOnly]: "Time only (HH-mm-ss)",
+            [DateTimestampFormat.Unix]: "Epoch (Unix)",
+            [DateTimestampFormat.None]: "None",
+        })
+              .setValue(this.plugin.settings.timestampFormat)
+              .onChange(async (value) => {
+            this.plugin.settings.timestampFormat = value as DateTimestampFormat;
+            await this.plugin.saveSettings();
+        })
       );
 
 
@@ -332,37 +332,37 @@ new Setting(containerEl)
 
 
 //============ BUY ME COFFEE ==================================================
-		const footer = containerEl.createDiv({ cls: "yt-settings-footer" });
-		footer.createEl("div", { text: "Like this plugin? Support my work." });
-		// Buy Me a Coffee
-		const coffeeLink = footer.createEl("a", {
-		text: "Buy me a ☕ coffee",
-		href: "https://www.buymeacoffee.com/YOURUSERNAME", // <-- update your handle
-		});
-		coffeeLink.setAttr("target", "_blank");
-		coffeeLink.addClass("yt-link");
+        const footer = containerEl.createDiv({ cls: "yt-settings-footer" });
+        footer.createEl("div", { text: "Like this plugin? Support my work." });
+        // Buy Me a Coffee
+        const coffeeLink = footer.createEl("a", {
+        text: "Buy me a ☕ coffee",
+        href: "https://www.buymeacoffee.com/YOURUSERNAME", // <-- update your handle
+        });
+        coffeeLink.setAttr("target", "_blank");
+        coffeeLink.addClass("yt-link");
 
-		// Separator
-		footer.createEl("span", { text: "  •  " });
+        // Separator
+        footer.createEl("span", { text: "  •  " });
 
-		// GitHub Sponsors
-		const sponsorsLink = footer.createEl("a", {
-		text: "GitHub sponsors",
-		href: "https://github.com/sponsors/sasiperi",
-		});
-		sponsorsLink.setAttr("target", "_blank");
-		sponsorsLink.addClass("yt-link");
+        // GitHub Sponsors
+        const sponsorsLink = footer.createEl("a", {
+        text: "GitHub sponsors",
+        href: "https://github.com/sponsors/sasiperi",
+        });
+        sponsorsLink.setAttr("target", "_blank");
+        sponsorsLink.addClass("yt-link");
 
-		// Separator
-		footer.createEl("span", { text: "  •  " });
+        // Separator
+        footer.createEl("span", { text: "  •  " });
 
 
-		// Personal website
-		const websiteLink = footer.createEl("a", {
-		text: "Visit my website",
-		href: "https://fourthquest.com/",
-		});
-		websiteLink.setAttr("target", "_blank");
-		websiteLink.addClass("yt-link");
-	}
+        // Personal website
+        const websiteLink = footer.createEl("a", {
+        text: "Visit my website",
+        href: "https://fourthquest.com/",
+        });
+        websiteLink.setAttr("target", "_blank");
+        websiteLink.addClass("yt-link");
+    }
 }

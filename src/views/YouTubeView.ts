@@ -1,5 +1,5 @@
 // src/views/YouTubeView.ts starts here
-import { ItemView, Notice, WorkspaceLeaf, TFile, parseYaml } from "obsidian";
+import { ItemView, Notice, WorkspaceLeaf, TFile } from "obsidian";
 import { PlayerWrapper } from "../youtube/playerWrapper";
 import { VIEW_TYPE_YOUTUBE_ANNOTATOR, SAVED_TIME_ANCHOR_PREFIX } from "../constants";
 import type YoutubeAnnotatorPlugin from "../main";
@@ -8,7 +8,15 @@ import { loadYouTubeIframeAPI } from "../youtube/youtubeApi";
 import { formatHMS } from "../utils/Time"
 import { extractVideoIdFromFrontmatter } from "../utils/extractVideoId";
 import { captureScreenshot } from "utils/captureScreenshot";
-import { ICON_IDS } from "./icon"
+
+type YouTubeViewState = { videoId?: unknown };
+
+function getVideoIdFromState(state: unknown): string | null {
+  if (!state || typeof state !== "object") return null;
+  const maybe = state as YouTubeViewState;
+  return typeof maybe.videoId === "string" ? maybe.videoId : null;
+}
+
 
 export class YouTubeView extends ItemView {
   playerWrapper: PlayerWrapper | null = null;
@@ -60,18 +68,16 @@ export class YouTubeView extends ItemView {
   }
 }
 
-  async setState(state: any): Promise<void> {
-    const newVideoId = state?.videoId ?? null;
+  async setState(state: unknown): Promise<void> {
+  const newVideoId = getVideoIdFromState(state);
 
-    if (!newVideoId || newVideoId === this.videoId) {
-      //console.log("setState: No new videoId or unchanged");
-      return;
-    }
-
-    //console.log("setState: switching to new videoId =", newVideoId);
-    this.videoId = newVideoId;
-    await this.renderPlayer();
+  if (!newVideoId || newVideoId === this.videoId) {
+    return;
   }
+
+  this.videoId = newVideoId;
+  await this.renderPlayer();
+}
 
   
 
@@ -113,7 +119,7 @@ this.register(() => { stopTick(); status.remove(); });
 //console.log("Rendering player for videoId:", this.videoId);
 const host = container.createDiv({ cls: "youtube-video-container" });
 const wrap = host.createDiv({ cls: "youtube-video-wrapper" });
-const playerContainer = wrap.createDiv({ attr: { id: "yt-player" } });
+wrap.createDiv({ attr: { id: "yt-player" } });
 
 
 const tools = container.createDiv({ cls: "yt-toolbar" });

@@ -1,13 +1,12 @@
 // src/utils/captureScreenshot.ts
-import { App, Notice, MarkdownView, normalizePath, FileSystemAdapter,Platform } from "obsidian";
+import { App, Notice, MarkdownView, normalizePath, FileSystemAdapter,Platform, } from "obsidian";
 import { generateDateTimestamp, DateTimestampFormat } from "../utils/date-timestamp";
 import type { Buffer } from "buffer";
+import * as cp from "child_process";
+import * as path from "path";
+import * as fs from "fs";
+import * as electron from "electron";
 
-/* Node/Electron requires (kept inline for Obsidian/Electron env) */
-const cp = require("child_process");
-const path = require("path");
-const fs = require("fs");
-const electron = require("electron");
 
 export type ImageFormat = "png" | "jpg" | "webp";
 
@@ -42,14 +41,30 @@ function insertAtCursor(app: App, md: string) {
   editor.replaceRange(md + " ", editor.getCursor());
 }
 
-async function ensureFolder(app: App, folder: string) {
-  const norm = normalizePath(folder);
+function tryLaunch(fn: () => void): boolean {
   try {
-    await app.vault.createFolder(norm);
-  } catch (e: any) {
-    if (!String(e?.message ?? "").includes("already exists")) throw e;
+    fn();
+    return true;
+  } catch {
+    // Intentionally ignored: launch methods are platform / availability dependent
+    return false;
   }
 }
+
+
+async function ensureFolder(app: App, folder: string): Promise<void> {
+  const norm = normalizePath(folder);
+
+  try {
+    await app.vault.createFolder(norm);
+  } catch (e: unknown) {
+    const msg =
+      e instanceof Error ? e.message : String(e);
+
+    if (!msg.includes("already exists")) throw e;
+  }
+}
+
 
 function toAbsoluteVaultPath(app: App, relPath: string): string | null {
   const adapter = app.vault.adapter;
@@ -67,40 +82,54 @@ function bufferToArrayBuffer(buf: Buffer): ArrayBuffer {
   return out;
 }
 
-function getClipboardImageSignature(clipboard: any): string {
+function getClipboardImageSignature(
+  clipboard: Electron.Clipboard
+): string {
   try {
     const img = clipboard.readImage();
-    if (!img || img.isEmpty()) return "";
-    const size = img.getSize?.();
-    return `${size?.width}x${size?.height}:${img.toDataURL?.()?.slice(0, 64) ?? ""}`;
+    if (img.isEmpty()) return "";
+
+    const size = img.getSize();
+    return `${size.width}x${size.height}:${img
+      .toDataURL()
+      .slice(0, 64)}`;
   } catch {
+    // Clipboard access can fail depending on OS / permissions
     return "";
   }
 }
+
+
 function waitForNewClipboardImage(
-  clipboard: any,
+  clipboard: Electron.Clipboard,
   previousSig: string,
   timeoutMs: number,
   intervalMs: number
-): Promise<any | null> {
+): Promise<Electron.NativeImage | null> {
   const start = Date.now();
+
   return new Promise((resolve) => {
     const tick = () => {
-      const img = clipboard.readImage?.();
-      if (img && !img.isEmpty()) {
+      const img = clipboard.readImage();
+      if (!img.isEmpty()) {
         const sig = getClipboardImageSignature(clipboard);
-        if (sig && sig !== previousSig) return resolve(img);
+        if (sig && sig !== previousSig) {
+          return resolve(img);
+        }
       }
-      if (Date.now() - start > timeoutMs) return resolve(null);
+
+      if (Date.now() - start > timeoutMs) {
+        return resolve(null);
+      }
+
       setTimeout(tick, intervalMs);
     };
+
     tick();
   });
 }
 
 
-const isMac = Platform.isMacOS;
-const isWin = Platform.isWin;
 
 // ============ BUTTON MAIN ENTRY ===============
 export async function captureScreenshot(app: App, opts: ScreenshotOptions): Promise<void> {
@@ -127,7 +156,7 @@ export async function captureScreenshot(app: App, opts: ScreenshotOptions): Prom
       await captureOnMac(absPath, opts.format);
     } else if (Platform.isWin) {
       // pass through your reuseLastRegion flag (optional)
-      await captureOnWindows(app, relPath, opts.format, !!(opts as any).reuseLastRegion);
+      await captureOnWindows(app, relPath, opts.format, opts.reuseLastRegion ?? false);
     } else {
       new Notice("Screenshot: unsupported desktop OS.", 2500);
       return;
@@ -154,7 +183,7 @@ async function captureOnMac(absPath: string, format: ImageFormat) {
 
 function execFileAsync(cmd: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    cp.execFile(cmd, args, (err: any) => (err ? reject(err) : resolve()));
+    cp.execFile(cmd, args, (err: unknown) => (err ? reject(err) : resolve()));
   });
 }
 
@@ -173,15 +202,16 @@ async function captureOnWindows(
   // Reuse ON => do NOT clear (lets OS sometimes reuse last region)
   // Reuse OFF => clear to force fresh selection
   if (!reuseLastRegion) {
-    try { clipboard.clear(); } catch {}
-  }
+  void clipboard.clear?.();
+}
 
   let launched = false;
-  try { shell.openExternal("ms-screenclip:"); launched = true; } catch {}
-  if (!launched) { try { cp.exec('start "" ms-screenclip:'); launched = true; } catch {} }
-  if (!launched) { try { cp.exec('start "" SnippingTool.exe /clip'); launched = true; } catch {} }
-  if (!launched) { try { cp.exec('start "" snippingtool /clip'); launched = true; } catch {} }
-  if (!launched) { try { cp.exec('start "" SnippingTool.exe'); } catch {} }
+  launched ||= tryLaunch(() => shell.openExternal("ms-screenclip:"));
+  launched ||= tryLaunch(() => cp.exec('start "" ms-screenclip:'));
+  launched ||= tryLaunch(() => cp.exec('start "" SnippingTool.exe /clip'));
+  launched ||= tryLaunch(() => cp.exec('start "" snippingtool /clip'));
+  launched ||= tryLaunch(() => cp.exec('start "" SnippingTool.exe'));
+
 
   // Give overlay a moment to appear
   await sleep(180);
@@ -201,6 +231,6 @@ async function captureOnWindows(
 
   // clear the clipboard now for fresh clean clip
   if (!reuseLastRegion) {
-    try { clipboard.clear(); } catch {}
-  }
+  void clipboard.clear?.();
+}
 }

@@ -38,7 +38,7 @@ function readingClickHandler(app: App) {
     if (href && href.startsWith(anchorPrefix)) {
       event.preventDefault();
       event.stopPropagation();
-      (event as any).stopImmediatePropagation?.();
+      event.stopImmediatePropagation?.();
 
       const seconds = Number(href.slice(anchorPrefix.length));
       if (!Number.isFinite(seconds)) return;
@@ -59,12 +59,12 @@ function readingClickHandler(app: App) {
     if (isYouTubeUrl(href)) {
       event.preventDefault();
       event.stopPropagation();
-      (event as any).stopImmediatePropagation?.();
+      event.stopImmediatePropagation?.();
 
       const videoId = extractVideoIdFromUrl(href);
       if (!videoId) return;
 
-      let right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
+      const right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
       if (!right) return;
       await right.setViewState({
         type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
@@ -128,12 +128,12 @@ function livePreviewHandler(app: App) {
       // 🆕 normal YouTube links in Live Preview → open side view
       e.preventDefault();
       e.stopPropagation();
-      (e as any).stopImmediatePropagation?.();
+      e.stopImmediatePropagation?.();
 
       const videoId = extractVideoIdFromUrl(href);
       if (!videoId) return true;
 
-      let right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
+      const right = app.workspace.getRightLeaf(false) || app.workspace.getRightLeaf(true);
       if (!right) return true;
       right.setViewState({
         type: VIEW_TYPE_YOUTUBE_ANNOTATOR,
@@ -149,7 +149,7 @@ function livePreviewHandler(app: App) {
 
     e.preventDefault();
     e.stopPropagation();
-    (e as any).stopImmediatePropagation?.();
+    e.stopImmediatePropagation?.();
 
     const leaf = app.workspace.getLeavesOfType(VIEW_TYPE_YOUTUBE_ANNOTATOR).first();
     const yt = leaf?.view as YouTubeView | undefined;
